@@ -7,12 +7,29 @@ import SectionHeading from '../components/SectionHeading';
 import CategoryCarousel from '../components/CategoryCarousel';
 import FadeImage from '../components/FadeImage';
 import { getPublishedProducts } from '../lib/productCatalog';
-import { getProducts } from '../lib/firebase';
+import { getProducts, subscribeToSettings } from '../lib/firebase';
 import type { Category, Product } from '../lib/types';
 import { heroChild, heroCta, heroParent, luxuryEase } from '../lib/motion';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>(() => getPublishedProducts());
+  const [heroBg, setHeroBg] = useState<string>('/images/placeholder-hero.svg');
+
+  useEffect(() => {
+    const unsub = subscribeToSettings((settings) => {
+      if (settings.heroImage) {
+        setHeroBg(settings.heroImage);
+      } else if (settings.heroImages && settings.heroImages.length > 0) {
+        setHeroBg(settings.heroImages[0]);
+      } else {
+        setHeroBg('/images/placeholder-hero.svg');
+      }
+    });
+
+    return () => {
+      unsub();
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -73,7 +90,7 @@ export default function Home() {
       <section className="relative flex h-[52vh] items-center overflow-hidden md:h-[60vh] lg:h-[70vh]">
         <div className="absolute inset-0">
           <FadeImage
-            src="/images/placeholder-hero.svg"
+            src={heroBg}
             alt="Zadel luxury fashion"
             className="h-full w-full object-cover"
           />

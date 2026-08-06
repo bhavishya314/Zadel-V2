@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Settings as SettingsIcon,
   ShieldCheck,
@@ -7,9 +7,22 @@ import {
   Save,
   CheckCircle2,
   Loader2,
+  Upload,
+  RefreshCw,
+  Trash2,
+  Image as ImageIcon,
+  Star,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { subscribeToSettings, updateSettings } from '../../lib/firebase';
+import {
+  subscribeToSettings,
+  updateSettings,
+  uploadBrandLogoToStorage,
+  deleteBrandLogoFromStorage,
+  uploadHeroImageToStorage,
+  deleteHeroImageFromStorage,
+} from '../../lib/firebase';
 import type { FirestoreSettings } from '../../lib/types';
 
 export default function AdminSettings() {
@@ -22,6 +35,22 @@ export default function AdminSettings() {
   const [brandName, setBrandName] = useState('');
   const [logo, setLogo] = useState('');
 
+  // Hero Banner state
+  const [heroImage, setHeroImage] = useState('');
+  const [heroImages, setHeroImages] = useState<string[]>([]);
+
+  // Logo upload / replace state
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [deletingLogo, setDeletingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Hero upload / replace / delete state
+  const [uploadingHero, setUploadingHero] = useState(false);
+  const [replacingHeroIndex, setReplacingHeroIndex] = useState<number | null>(null);
+  const [deletingHeroIndex, setDeletingHeroIndex] = useState<number | null>(null);
+  const heroFileInputRef = useRef<HTMLInputElement>(null);
+  const heroReplaceInputRef = useRef<HTMLInputElement>(null);
+
   // Saving states
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -32,6 +61,14 @@ export default function AdminSettings() {
       setSettings(data);
       setBrandName(data.brandName || data.storeName || 'ZADEL');
       setLogo(data.logo || '');
+      setHeroImage(data.heroImage || (data.heroImages && data.heroImages.length > 0 ? data.heroImages[0] : ''));
+      setHeroImages(
+        Array.isArray(data.heroImages) && data.heroImages.length > 0
+          ? data.heroImages
+          : data.heroImage
+          ? [data.heroImage]
+          : []
+      );
       setLoading(false);
     });
 
@@ -40,6 +77,239 @@ export default function AdminSettings() {
     };
   }, []);
 
+  // Handle Logo Upload / Replace
+  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    setUploadingLogo(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    try {
+      const oldLogoUrl = logo;
+      const downloadUrl = await uploadBrandLogoToStorage(file);
+
+      const finalBrandName = brandName.trim() || 'ZADEL';
+      await updateSettings({
+        id: settings?.id || 'general',
+        brandName: finalBrandName,
+        storeName: finalBrandName,
+        logo: downloadUrl,
+      });
+
+      setLogo(downloadUrl);
+
+      if (oldLogoUrl && oldLogoUrl !== downloadUrl) {
+        deleteBrandLogoFromStorage(oldLogoUrl).catch(() => {});
+      }
+
+      setSuccessMsg('Brand Logo uploaded to Firebase Storage and saved in Firestore! Customer website updated instantly.');
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } catch (err) {
+      console.error('Error uploading brand logo:', err);
+      setErrorMsg('Failed to upload logo to Firebase Storage. Please try again.');
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle Logo Delete
+  const handleDeleteLogo = async () => {
+    if (!logo) return;
+    if (!window.confirm('Are you sure you want to delete the brand logo?')) return;
+
+    setDeletingLogo(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    try {
+      const targetUrl = logo;
+
+      const finalBrandName = brandName.trim() || 'ZADEL';
+      await updateSettings({
+        id: settings?.id || 'general',
+        brandName: finalBrandName,
+        storeName: finalBrandName,
+        logo: '',
+      });
+
+      setLogo('');
+
+      await deleteBrandLogoFromStorage(targetUrl);
+
+      setSuccessMsg('Brand Logo deleted from Firebase Storage and Firestore. Customer website updated instantly.');
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } catch (err) {
+      console.error('Error deleting brand logo:', err);
+      setErrorMsg('Failed to delete brand logo.');
+    } finally {
+      setDeletingLogo(false);
+    }
+  };
+
+  // Handle Hero Upload
+  const handleHeroFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingHero(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    try {
+      const newUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const url = await uploadHeroImageToStorage(files[i]);
+        newUrls.push(url);
+      }
+
+      const updatedHeroImages = [...heroImages, ...newUrls];
+      const primaryUrl = updatedHeroImages[0] || '';
+
+      await updateSettings({
+        id: settings?.id || 'general',
+        heroImage: primaryUrl,
+        heroImages: updatedHeroImages,
+      });
+
+      setHeroImage(primaryUrl);
+      setHeroImages(updatedHeroImages);
+
+      setSuccessMsg(`${newUrls.length} Hero image(s) uploaded to Firebase Storage and saved in Firestore! Customer website updated instantly.`);
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } catch (err) {
+      console.error('Error uploading hero image(s):', err);
+      setErrorMsg('Failed to upload hero image(s) to Firebase Storage.');
+    } finally {
+      setUploadingHero(false);
+      if (heroFileInputRef.current) {
+        heroFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Trigger Replace Hero Image
+  const triggerReplaceHero = (index: number) => {
+    setReplacingHeroIndex(index);
+    if (heroReplaceInputRef.current) {
+      heroReplaceInputRef.current.value = '';
+      heroReplaceInputRef.current.click();
+    }
+  };
+
+  // Handle Replace Hero Image File
+  const handleReplaceHeroFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (replacingHeroIndex === null) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const targetIndex = replacingHeroIndex;
+    setUploadingHero(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    try {
+      const oldUrl = heroImages[targetIndex];
+      const newUrl = await uploadHeroImageToStorage(file);
+
+      const updatedHeroImages = [...heroImages];
+      updatedHeroImages[targetIndex] = newUrl;
+      const primaryUrl = updatedHeroImages[0] || '';
+
+      await updateSettings({
+        id: settings?.id || 'general',
+        heroImage: primaryUrl,
+        heroImages: updatedHeroImages,
+      });
+
+      setHeroImage(primaryUrl);
+      setHeroImages(updatedHeroImages);
+
+      if (oldUrl && oldUrl !== newUrl) {
+        deleteHeroImageFromStorage(oldUrl).catch(() => {});
+      }
+
+      setSuccessMsg('Hero image replaced in Firebase Storage and updated in Firestore! Customer website updated instantly.');
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } catch (err) {
+      console.error('Error replacing hero image:', err);
+      setErrorMsg('Failed to replace hero image.');
+    } finally {
+      setUploadingHero(false);
+      setReplacingHeroIndex(null);
+      if (heroReplaceInputRef.current) {
+        heroReplaceInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle Delete Hero Image
+  const handleDeleteHero = async (index: number) => {
+    const targetUrl = heroImages[index];
+    if (!targetUrl) return;
+
+    if (!window.confirm('Are you sure you want to delete this hero image?')) return;
+
+    setDeletingHeroIndex(index);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    try {
+      const updatedHeroImages = heroImages.filter((_, i) => i !== index);
+      const primaryUrl = updatedHeroImages[0] || '';
+
+      await updateSettings({
+        id: settings?.id || 'general',
+        heroImage: primaryUrl,
+        heroImages: updatedHeroImages,
+      });
+
+      setHeroImage(primaryUrl);
+      setHeroImages(updatedHeroImages);
+
+      await deleteHeroImageFromStorage(targetUrl);
+
+      setSuccessMsg('Hero image deleted from Firebase Storage and Firestore. Customer website updated instantly.');
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } catch (err) {
+      console.error('Error deleting hero image:', err);
+      setErrorMsg('Failed to delete hero image.');
+    } finally {
+      setDeletingHeroIndex(null);
+    }
+  };
+
+  // Set Hero as Primary
+  const handleSetPrimaryHero = async (index: number) => {
+    if (index === 0) return;
+    const selectedUrl = heroImages[index];
+    const updatedHeroImages = [selectedUrl, ...heroImages.filter((_, i) => i !== index)];
+
+    try {
+      await updateSettings({
+        id: settings?.id || 'general',
+        heroImage: selectedUrl,
+        heroImages: updatedHeroImages,
+      });
+
+      setHeroImage(selectedUrl);
+      setHeroImages(updatedHeroImages);
+
+      setSuccessMsg('Primary Hero image updated! Customer website updated instantly.');
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      console.error('Error setting primary hero image:', err);
+      setErrorMsg('Failed to set primary hero image.');
+    }
+  };
+
+  // Handle Form Save
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -53,8 +323,10 @@ export default function AdminSettings() {
         brandName: finalBrandName,
         storeName: finalBrandName,
         logo: logo.trim(),
+        heroImage: heroImage.trim(),
+        heroImages: heroImages,
       });
-      setSuccessMsg('Website settings saved to Firestore.');
+      setSuccessMsg('Website branding & hero settings saved to Firestore! Customer website updated instantly.');
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
       console.error('Error updating website settings:', err);
@@ -66,6 +338,34 @@ export default function AdminSettings() {
 
   return (
     <div className="space-y-6">
+      {/* Hidden File Input for Logo Upload / Replace */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        onChange={handleLogoFileChange}
+        className="hidden"
+      />
+
+      {/* Hidden File Input for Hero Upload */}
+      <input
+        type="file"
+        ref={heroFileInputRef}
+        accept="image/*"
+        multiple
+        onChange={handleHeroFileUpload}
+        className="hidden"
+      />
+
+      {/* Hidden File Input for Hero Replace */}
+      <input
+        type="file"
+        ref={heroReplaceInputRef}
+        accept="image/*"
+        onChange={handleReplaceHeroFileChange}
+        className="hidden"
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-800 pb-5">
         <div>
@@ -88,10 +388,10 @@ export default function AdminSettings() {
         <div className="space-y-1">
           <h2 className="text-sm font-medium uppercase tracking-wider text-neutral-300 flex items-center gap-2">
             <Globe className="h-4 w-4 text-zadel-gold" />
-            <span>Website Branding Settings</span>
+            <span>Website Branding & Media Settings</span>
           </h2>
           <p className="text-xs text-neutral-400">
-            Configure global website branding settings stored directly in Firestore.
+            Manage global store name, brand logo, and hero banner images stored in Firebase Storage and Firestore.
           </p>
         </div>
 
@@ -101,7 +401,7 @@ export default function AdminSettings() {
             <span>Loading website settings from Firestore...</span>
           </div>
         ) : (
-          <form onSubmit={handleSave} className="space-y-5 text-xs">
+          <form onSubmit={handleSave} className="space-y-6 text-xs">
             {successMsg && (
               <div className="p-3 bg-emerald-950/60 border border-emerald-800/50 text-emerald-300 rounded-lg flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -114,6 +414,260 @@ export default function AdminSettings() {
                 {errorMsg}
               </div>
             )}
+
+            {/* Brand Logo Upload / Replace / Delete Management Card */}
+            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
+                <div className="flex items-center gap-2 text-neutral-200 font-medium">
+                  <ImageIcon className="h-4 w-4 text-zadel-gold" />
+                  <span>Brand Logo Management</span>
+                </div>
+                <span className="text-[10px] font-mono uppercase text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/50">
+                  Firebase Storage
+                </span>
+              </div>
+
+              {logo ? (
+                /* Current Logo Preview & Actions */
+                <div className="flex flex-col sm:flex-row sm:items-center gap-5 p-4 rounded-lg bg-neutral-900/80 border border-neutral-800">
+                  <div className="relative flex items-center justify-center h-20 w-44 rounded-md border border-neutral-800 bg-neutral-950 p-2 overflow-hidden shrink-0">
+                    <img
+                      src={logo}
+                      alt="Current Brand Logo"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+
+                  <div className="flex-1 space-y-1 min-w-0">
+                    <p className="font-medium text-neutral-200">Active Brand Logo</p>
+                    <p className="text-[11px] text-neutral-500 font-mono truncate" title={logo}>
+                      {logo}
+                    </p>
+                    <p className="text-[10px] text-emerald-400 flex items-center gap-1 pt-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span>Live on customer website header in real-time</span>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingLogo || deletingLogo}
+                      className="flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {uploadingLogo ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-zadel-gold" />
+                      ) : (
+                        <RefreshCw className="h-3.5 w-3.5 text-zadel-gold" />
+                      )}
+                      <span>{uploadingLogo ? 'Uploading...' : 'Replace Logo'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleDeleteLogo}
+                      disabled={uploadingLogo || deletingLogo}
+                      className="flex items-center gap-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/60 px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {deletingLogo ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-red-400" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Empty Logo Dropzone / Upload Area */
+                <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/40 p-6 text-center space-y-3">
+                  <Upload className="h-8 w-8 text-zadel-gold mx-auto" />
+                  <div>
+                    <p className="font-medium text-neutral-300">No Brand Logo Uploaded</p>
+                    <p className="text-[11px] text-neutral-500">
+                      Upload a logo image (.png, .svg, .webp, .jpg) to Firebase Storage
+                    </p>
+                  </div>
+
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingLogo}
+                      className="inline-flex items-center gap-2 bg-zadel-gold text-black font-medium text-xs px-4 py-2 rounded-lg cursor-pointer hover:bg-amber-400 transition-colors disabled:opacity-50"
+                    >
+                      {uploadingLogo ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      <span>{uploadingLogo ? 'Uploading to Firebase Storage...' : 'Upload Brand Logo'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Hero Image Management Section */}
+            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
+                <div className="flex items-center gap-2 text-neutral-200 font-medium">
+                  <ImageIcon className="h-4 w-4 text-zadel-gold" />
+                  <span>Hero Banner Image Management</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono uppercase text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/50">
+                    Firebase Storage & Firestore
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => heroFileInputRef.current?.click()}
+                    disabled={uploadingHero}
+                    className="flex items-center gap-1.5 bg-zadel-gold text-black px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer hover:bg-amber-400 transition-colors disabled:opacity-50"
+                  >
+                    {uploadingHero ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5" />
+                    )}
+                    <span>Upload Hero Image</span>
+                  </button>
+                </div>
+              </div>
+
+              {heroImages.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-[11px] text-neutral-400">
+                    Managed hero images synced in real-time. The primary image is displayed on the homepage hero banner.
+                  </p>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {heroImages.map((imgUrl, index) => {
+                      const isPrimary = index === 0 || imgUrl === heroImage;
+                      const isDeleting = deletingHeroIndex === index;
+                      const isReplacing = replacingHeroIndex === index;
+
+                      return (
+                        <div
+                          key={imgUrl + index}
+                          className={`flex flex-col md:flex-row md:items-center gap-4 p-4 rounded-lg border transition-colors ${
+                            isPrimary
+                              ? 'bg-neutral-900/90 border-zadel-gold/40'
+                              : 'bg-neutral-900/40 border-neutral-800'
+                          }`}
+                        >
+                          {/* Image Thumbnail */}
+                          <div className="relative h-28 w-full md:w-52 rounded-md border border-neutral-800 bg-neutral-950 overflow-hidden shrink-0">
+                            <img
+                              src={imgUrl}
+                              alt={`Hero Banner ${index + 1}`}
+                              className="h-full w-full object-cover"
+                            />
+                            {isPrimary && (
+                              <span className="absolute top-2 left-2 flex items-center gap-1 bg-zadel-gold text-black text-[10px] font-semibold px-2 py-0.5 rounded shadow">
+                                <Star className="h-3 w-3 fill-black" />
+                                <span>Primary Hero</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 space-y-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-neutral-200">
+                                Hero Image #{index + 1}
+                              </span>
+                              {isPrimary && (
+                                <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  <span>Active on Homepage</span>
+                                </span>
+                              )}
+                            </div>
+                            <p
+                              className="text-[11px] text-neutral-500 font-mono truncate"
+                              title={imgUrl}
+                            >
+                              {imgUrl}
+                            </p>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 self-start md:self-center shrink-0">
+                            {!isPrimary && (
+                              <button
+                                type="button"
+                                onClick={() => handleSetPrimaryHero(index)}
+                                className="flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-zadel-gold border border-zadel-gold/30 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                              >
+                                <Star className="h-3.5 w-3.5" />
+                                <span>Set as Primary</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => triggerReplaceHero(index)}
+                              disabled={uploadingHero || isDeleting}
+                              className="flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {isReplacing && uploadingHero ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-zadel-gold" />
+                              ) : (
+                                <RefreshCw className="h-3.5 w-3.5 text-zadel-gold" />
+                              )}
+                              <span>Replace</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteHero(index)}
+                              disabled={uploadingHero || isDeleting}
+                              className="flex items-center gap-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/60 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              {isDeleting ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-red-400" />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                              )}
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                /* Empty Hero Dropzone */
+                <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/40 p-6 text-center space-y-3">
+                  <ImageIcon className="h-8 w-8 text-zadel-gold mx-auto" />
+                  <div>
+                    <p className="font-medium text-neutral-300">No Hero Banner Images Uploaded</p>
+                    <p className="text-[11px] text-neutral-500">
+                      Upload high-resolution banner images to Firebase Storage to display on the customer homepage
+                    </p>
+                  </div>
+
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => heroFileInputRef.current?.click()}
+                      disabled={uploadingHero}
+                      className="inline-flex items-center gap-2 bg-zadel-gold text-black font-medium text-xs px-4 py-2 rounded-lg cursor-pointer hover:bg-amber-400 transition-colors disabled:opacity-50"
+                    >
+                      {uploadingHero ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      <span>{uploadingHero ? 'Uploading to Firebase Storage...' : 'Upload Hero Image'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -135,17 +689,17 @@ export default function AdminSettings() {
 
               <div>
                 <label className="block mb-1.5 font-medium text-neutral-300">
-                  Logo URL
+                  Logo URL (Manual or Storage URL)
                 </label>
                 <input
                   type="text"
                   value={logo}
                   onChange={(e) => setLogo(e.target.value)}
-                  placeholder="https://example.com/logo.png or asset path"
+                  placeholder="https://firebasestorage.googleapis.com/... or asset path"
                   className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none font-mono text-[11px]"
                 />
                 <p className="mt-1 text-[11px] text-neutral-500">
-                  Custom image logo URL or asset path.
+                  Direct Firebase Storage download URL or external image link.
                 </p>
               </div>
             </div>
@@ -153,7 +707,7 @@ export default function AdminSettings() {
             <div className="pt-2 flex justify-end">
               <button
                 type="submit"
-                disabled={saving}
+                disabled={saving || uploadingLogo || deletingLogo || uploadingHero}
                 className="flex items-center gap-2 bg-zadel-gold text-black font-medium px-5 py-2 rounded-lg hover:bg-amber-400 transition-colors disabled:opacity-50 cursor-pointer text-xs"
               >
                 {saving ? (
@@ -190,8 +744,12 @@ export default function AdminSettings() {
             <span className="text-emerald-400 font-mono">Active</span>
           </div>
           <div className="py-3 flex items-center justify-between">
-            <span className="text-neutral-300">Session Local Persistence</span>
-            <span className="text-emerald-400 font-mono">Persistent</span>
+            <span className="text-neutral-300">Firebase Storage Brand Logo Uploads</span>
+            <span className="text-emerald-400 font-mono">Active</span>
+          </div>
+          <div className="py-3 flex items-center justify-between">
+            <span className="text-neutral-300">Firebase Storage Hero Banner Uploads</span>
+            <span className="text-emerald-400 font-mono">Active</span>
           </div>
           <div className="py-3 flex items-center justify-between">
             <span className="text-neutral-300">Active Admin Email</span>

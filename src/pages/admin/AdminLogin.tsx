@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, verifyAdminUser } from '../../lib/firebase';
@@ -15,8 +15,13 @@ export default function AdminLogin() {
   const [submitting, setSubmitting] = useState(false);
 
   // If already authenticated, redirect to /admin
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/admin', { replace: true });
+    }
+  }, [loading, user, navigate]);
+
   if (!loading && user) {
-    navigate('/admin', { replace: true });
     return null;
   }
 

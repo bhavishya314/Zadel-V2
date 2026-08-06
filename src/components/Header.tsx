@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Heart, Menu, Moon, Search, ShoppingBag, Sun, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../context/StoreContext';
 import { useTheme } from '../context/ThemeContext';
 import { luxuryEase, navFade } from '../lib/motion';
+import { subscribeToSettings } from '../lib/firebase';
 
 const links = [
   { to: '/', label: 'Home' },
@@ -23,7 +24,20 @@ export default function Header() {
   const { theme, toggleTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [brandName, setBrandName] = useState('ZADEL');
+  const [brandLogo, setBrandLogo] = useState('');
   const location = useLocation();
+
+  useEffect(() => {
+    const unsubscribe = subscribeToSettings((data) => {
+      setBrandName(data.brandName || data.storeName || 'ZADEL');
+      setBrandLogo(data.logo || '');
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -95,6 +109,24 @@ export default function Header() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Center Brand Logo / Name */}
+        <Link
+          to="/"
+          className="flex items-center justify-center transition-opacity hover:opacity-85 my-auto"
+        >
+          {brandLogo ? (
+            <img
+              src={brandLogo}
+              alt={brandName}
+              className="h-7 md:h-9 max-w-[140px] md:max-w-[200px] object-contain"
+            />
+          ) : (
+            <span className="font-display text-xl md:text-2xl font-bold tracking-[0.2em] text-foreground uppercase">
+              {brandName}
+            </span>
+          )}
+        </Link>
 
         <div className="flex items-center gap-1 sm:gap-2">
           <button

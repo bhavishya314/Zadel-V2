@@ -11,8 +11,47 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { FirestoreProduct } from './types';
+import { products as initialProducts } from './products';
 
 const PRODUCTS_COLLECTION = 'products';
+
+/**
+ * Seed initial products if collection is empty in Firestore
+ */
+export async function seedInitialProductsIfEmpty(): Promise<void> {
+  try {
+    const colRef = collection(db, PRODUCTS_COLLECTION);
+    const snap = await getDocs(colRef);
+    if (snap.empty) {
+      const now = new Date().toISOString();
+      for (const p of initialProducts) {
+        const docRef = doc(db, PRODUCTS_COLLECTION, p.id);
+        await setDoc(docRef, {
+          images: p.images && p.images.length > 0 ? p.images : ['/images/placeholder.svg'],
+          name: p.name,
+          title: p.name,
+          subtitle: p.category,
+          description: p.description,
+          price: p.price,
+          originalPrice: p.originalPrice,
+          discount: p.discount,
+          category: p.category,
+          sizes: p.sizes,
+          stock: 10,
+          inStock: true,
+          featured: p.featured,
+          bestSeller: p.bestSeller,
+          published: true,
+          tags: p.tags,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Error seeding initial products:', err);
+  }
+}
 
 /**
  * Add a new product to Firestore
@@ -176,9 +215,17 @@ export function subscribeToProducts(
   callback: (products: FirestoreProduct[]) => void
 ): Unsubscribe {
   const colRef = collection(db, PRODUCTS_COLLECTION);
+  let isSeeding = false;
+
   return onSnapshot(
     colRef,
-    (snapshot) => {
+    async (snapshot) => {
+      if (snapshot.empty && !isSeeding) {
+        isSeeding = true;
+        await seedInitialProductsIfEmpty();
+        return;
+      }
+
       const products: FirestoreProduct[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();

@@ -82,6 +82,8 @@ export interface FirestoreSettings {
   brandName?: string;
   storeName?: string;
   logo?: string;
+  heroImage?: string;
+  heroImages?: string[];
   currency?: string;
   taxRate?: number;
   freeShippingThreshold?: number;

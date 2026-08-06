@@ -28,6 +28,8 @@ export async function getSettings(): Promise<FirestoreSettings> {
       brandName: data.brandName || data.storeName || 'ZADEL',
       storeName: data.storeName || data.brandName || 'ZADEL',
       logo: data.logo || '',
+      heroImage: data.heroImage || '',
+      heroImages: Array.isArray(data.heroImages) ? data.heroImages : (data.heroImage ? [data.heroImage] : []),
       currency: data.currency || 'USD',
       taxRate: typeof data.taxRate === 'number' ? data.taxRate : 0,
       freeShippingThreshold:
@@ -51,6 +53,8 @@ export async function getSettings(): Promise<FirestoreSettings> {
       brandName: data.brandName || data.storeName || 'ZADEL',
       storeName: data.storeName || data.brandName || 'ZADEL',
       logo: data.logo || '',
+      heroImage: data.heroImage || '',
+      heroImages: Array.isArray(data.heroImages) ? data.heroImages : (data.heroImage ? [data.heroImage] : []),
       currency: data.currency || 'USD',
       taxRate: typeof data.taxRate === 'number' ? data.taxRate : 0,
       freeShippingThreshold:
@@ -69,6 +73,8 @@ export async function getSettings(): Promise<FirestoreSettings> {
     brandName: 'ZADEL',
     storeName: 'ZADEL',
     logo: '',
+    heroImage: '',
+    heroImages: [],
     currency: 'USD',
     taxRate: 0,
     freeShippingThreshold: 150,
@@ -91,10 +97,10 @@ export async function updateSettings(
   const brandName = settingsData.brandName || settingsData.storeName || 'ZADEL';
   const storeName = settingsData.storeName || settingsData.brandName || 'ZADEL';
 
-  const updates: Omit<FirestoreSettings, 'id'> = {
+  const updates: Record<string, any> = {
     brandName,
     storeName,
-    logo: settingsData.logo || '',
+    logo: settingsData.logo !== undefined ? settingsData.logo : '',
     currency: settingsData.currency || 'USD',
     taxRate: typeof settingsData.taxRate === 'number' ? settingsData.taxRate : 0,
     freeShippingThreshold:
@@ -105,6 +111,13 @@ export async function updateSettings(
     maintenanceMode: Boolean(settingsData.maintenanceMode),
     updatedAt: now,
   };
+
+  if (settingsData.heroImage !== undefined) {
+    updates.heroImage = settingsData.heroImage;
+  }
+  if (settingsData.heroImages !== undefined) {
+    updates.heroImages = settingsData.heroImages;
+  }
 
   await setDoc(docRef, updates, { merge: true });
   return { id: docId, ...updates };
@@ -127,6 +140,8 @@ export function subscribeToSettings(
           brandName: data.brandName || data.storeName || 'ZADEL',
           storeName: data.storeName || data.brandName || 'ZADEL',
           logo: data.logo || '',
+          heroImage: data.heroImage || '',
+          heroImages: Array.isArray(data.heroImages) ? data.heroImages : (data.heroImage ? [data.heroImage] : []),
           currency: data.currency || 'USD',
           taxRate: typeof data.taxRate === 'number' ? data.taxRate : 0,
           freeShippingThreshold:
@@ -143,6 +158,8 @@ export function subscribeToSettings(
           brandName: 'ZADEL',
           storeName: 'ZADEL',
           logo: '',
+          heroImage: '',
+          heroImages: [],
           currency: 'USD',
           taxRate: 0,
           freeShippingThreshold: 150,
