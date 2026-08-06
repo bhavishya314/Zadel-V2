@@ -1,0 +1,135 @@
+{
+  "entities": {
+    "admins": {
+      "title": "Admins",
+      "description": "Collection of authorized administrators",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the admin"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email of the admin"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when admin document was created"
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "system/admin_config": {
+      "title": "Admin Config",
+      "description": "Stores administrator setup state and metadata",
+      "properties": {
+        "adminExists": {
+          "type": "boolean",
+          "description": "True if an administrator account has been created"
+        },
+        "adminEmail": {
+          "type": "string",
+          "description": "Email of the registered administrator"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when admin account was created"
+        }
+      },
+      "required": ["adminExists", "adminEmail"]
+    },
+    "products": {
+      "title": "Products",
+      "description": "Product catalog items",
+      "properties": {
+        "id": { "type": "string", "description": "Product unique identifier" },
+        "name": { "type": "string", "description": "Product name" },
+        "title": { "type": "string", "description": "Product display title" },
+        "subtitle": { "type": "string", "description": "Product subtitle or tagline" },
+        "price": { "type": "number", "description": "Price in USD" },
+        "originalPrice": { "type": "number", "description": "Original price before discount" },
+        "discount": { "type": "number", "description": "Discount percentage" },
+        "category": { "type": "string", "description": "Category name or slug" },
+        "description": { "type": "string", "description": "Detailed product description" },
+        "sizes": { "type": "array", "description": "Available size options" },
+        "images": { "type": "array", "description": "Product image URLs" },
+        "featured": { "type": "boolean", "description": "Featured product status" },
+        "bestSeller": { "type": "boolean", "description": "Best seller status" },
+        "inStock": { "type": "boolean", "description": "Inventory stock availability" },
+        "published": { "type": "boolean", "description": "Visibility on customer storefront" },
+        "createdAt": { "type": "string", "description": "ISO timestamp of creation" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last update" }
+      },
+      "required": ["id", "name", "price", "category", "description", "images"]
+    },
+    "categories": {
+      "title": "Categories",
+      "description": "Product category taxonomy",
+      "properties": {
+        "id": { "type": "string", "description": "Category document ID" },
+        "name": { "type": "string", "description": "Category display name" },
+        "slug": { "type": "string", "description": "URL-friendly category slug" },
+        "description": { "type": "string", "description": "Category description" },
+        "image": { "type": "string", "description": "Category cover image URL" },
+        "itemCount": { "type": "number", "description": "Total products in category" },
+        "createdAt": { "type": "string", "description": "ISO timestamp of creation" }
+      },
+      "required": ["id", "name", "slug"]
+    },
+    "settings": {
+      "title": "Store Settings",
+      "description": "Global store configuration and preferences",
+      "properties": {
+        "id": { "type": "string", "description": "Settings document ID" },
+        "brandName": { "type": "string", "description": "Brand name of the store" },
+        "storeName": { "type": "string", "description": "Store title" },
+        "logo": { "type": "string", "description": "Logo URL or image asset path" },
+        "currency": { "type": "string", "description": "Default store currency" },
+        "taxRate": { "type": "number", "description": "Default tax rate percentage" },
+        "freeShippingThreshold": { "type": "number", "description": "Order amount for free shipping" },
+        "enableReviews": { "type": "boolean", "description": "Flag to enable/disable product reviews" },
+        "maintenanceMode": { "type": "boolean", "description": "Flag for store maintenance status" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last configuration update" }
+      },
+      "required": ["id"]
+    },
+    "contact": {
+      "title": "Contact Information",
+      "description": "Support and store contact settings",
+      "properties": {
+        "id": { "type": "string", "description": "Contact document ID" },
+        "whatsapp": { "type": "string", "description": "WhatsApp contact number" },
+        "whatsappNumber": { "type": "string", "description": "WhatsApp contact number with country code" },
+        "instagram": { "type": "string", "description": "Instagram handle or URL" },
+        "phone": { "type": "string", "description": "Direct phone number" },
+        "phoneNumber": { "type": "string", "description": "Direct customer support phone number" },
+        "email": { "type": "string", "description": "Customer support email address" },
+        "supportEmail": { "type": "string", "description": "Customer support email address" },
+        "address": { "type": "string", "description": "Physical boutique store address" },
+        "storeAddress": { "type": "string", "description": "Physical boutique store address" },
+        "operatingHours": { "type": "string", "description": "Boutique operating hours description" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last update" }
+      },
+      "required": ["id"]
+    },
+    "reviews": {
+      "title": "Product Reviews",
+      "description": "Customer ratings and reviews",
+      "properties": {
+        "id": { "type": "string", "description": "Review unique identifier" },
+        "productId": { "type": "string", "description": "Target product ID" },
+        "author": { "type": "string", "description": "Review author name" },
+        "name": { "type": "string", "description": "Reviewer name" },
+        "rating": { "type": "number", "description": "Rating out of 5" },
+        "review": { "type": "string", "description": "Review text content" },
+        "title": { "type": "string", "description": "Review headline title" },
+        "comment": { "type": "string", "description": "Review body text" },
+        "text": { "type": "string", "description": "Review body text alias" },
+        "verified": { "type": "boolean", "description": "Verified buyer status" },
+        "date": { "type": "string", "description": "Submission date string" },
+        "createdAt": { "type": "string", "description": "ISO timestamp of creation" }
+      },
+      "required": ["id", "productId", "rating"]
+    }
+  }
+}

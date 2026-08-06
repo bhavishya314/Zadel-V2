@@ -1,0 +1,422 @@
+@import "tailwindcss";
+
+@theme {
+  --color-zadel-black: var(--theme-bg);
+  --color-zadel-elevated: var(--theme-elevated);
+  --color-zadel-surface: var(--theme-surface);
+  --color-zadel-gold: #c4a574;
+  --color-zadel-gold-light: #d4bc94;
+  --color-zadel-ink: #0a0a0a;
+  --color-zadel-solid: var(--theme-solid);
+  --color-zadel-on-solid: var(--theme-on-solid);
+  --color-foreground: var(--theme-fg);
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --ease-luxury: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 220ms;
+  --duration-mid: 300ms;
+  --duration-slow: 600ms;
+}
+
+/* Dark (default) */
+:root,
+[data-theme="dark"] {
+  --theme-bg: #0a0a0a;
+  --theme-elevated: #111111;
+  --theme-surface: #1a1a1a;
+  --theme-fg: #ffffff;
+  --theme-solid: #ffffff;
+  --theme-on-solid: #0a0a0a;
+  --theme-scrollbar-track: #0a0a0a;
+  --theme-scrollbar-thumb: #2a2a2a;
+  --theme-range-track: #2a2a2a;
+  --theme-select-bg: #111111;
+  --theme-select-fg: #ffffff;
+}
+
+/* Light — warm off-white luxury */
+[data-theme="light"] {
+  --theme-bg: #f6f2eb;
+  --theme-elevated: #fffcf7;
+  --theme-surface: #ebe4d8;
+  --theme-fg: #1a1814;
+  --theme-solid: #1a1814;
+  --theme-on-solid: #f6f2eb;
+  --theme-scrollbar-track: #efe8dc;
+  --theme-scrollbar-thumb: #cfc4b2;
+  --theme-range-track: #d4cbbd;
+  --theme-select-bg: #fffcf7;
+  --theme-select-fg: #1a1814;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--theme-bg);
+    color: var(--theme-fg);
+    font-family: var(--font-sans);
+    transition:
+      background-color 300ms var(--ease-luxury),
+      color 300ms var(--ease-luxury);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-zadel-gold) 35%, transparent);
+    color: var(--theme-fg);
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  /* Soft image reveal after load */
+  img.img-fade {
+    opacity: 0;
+    transition: opacity 500ms var(--ease-luxury);
+  }
+
+  img.img-fade.is-loaded {
+    opacity: 1;
+  }
+
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+  }
+
+  .category-carousel {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+  }
+
+  .category-carousel::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  /* Theme-aware surface transitions */
+  .theme-surface {
+    transition:
+      background-color 300ms var(--ease-luxury),
+      color 300ms var(--ease-luxury),
+      border-color 300ms var(--ease-luxury),
+      box-shadow 300ms var(--ease-luxury);
+  }
+
+  /* Soft site-wide theme blend during toggle */
+  .theme-transitioning,
+  .theme-transitioning body,
+  .theme-transitioning .theme-surface,
+  .theme-transitioning header,
+  .theme-transitioning footer,
+  .theme-transitioning main,
+  .theme-transitioning section,
+  .theme-transitioning aside,
+  .theme-transitioning button,
+  .theme-transitioning a,
+  .theme-transitioning input,
+  .theme-transitioning textarea,
+  .theme-transitioning select,
+  .theme-transitioning article,
+  .theme-transitioning div {
+    transition:
+      background-color 300ms var(--ease-luxury),
+      color 300ms var(--ease-luxury),
+      border-color 300ms var(--ease-luxury),
+      fill 300ms var(--ease-luxury),
+      stroke 300ms var(--ease-luxury),
+      box-shadow 300ms var(--ease-luxury) !important;
+  }
+
+  /* Premium interactive button / CTA */
+  .btn-luxury {
+    transition:
+      transform var(--duration-fast) var(--ease-luxury),
+      background-color var(--duration-mid) var(--ease-luxury),
+      color var(--duration-mid) var(--ease-luxury),
+      border-color var(--duration-mid) var(--ease-luxury),
+      box-shadow var(--duration-mid) var(--ease-luxury),
+      filter var(--duration-fast) var(--ease-luxury),
+      opacity var(--duration-fast) var(--ease-luxury);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .btn-luxury:hover {
+      transform: translateY(-1.5px);
+      filter: brightness(1.06);
+      box-shadow: 0 8px 22px rgb(0 0 0 / 0.14);
+    }
+  }
+
+  .btn-luxury:active {
+    transform: translateY(0) scale(0.985);
+    filter: brightness(0.98);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
+  }
+
+  /* Icon buttons (nav, drawers) */
+  .icon-btn {
+    transition:
+      color var(--duration-fast) var(--ease-luxury),
+      background-color var(--duration-fast) var(--ease-luxury),
+      border-color var(--duration-fast) var(--ease-luxury),
+      transform var(--duration-fast) var(--ease-luxury),
+      opacity var(--duration-fast) var(--ease-luxury);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .icon-btn:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  .icon-btn:active {
+    transform: scale(0.94);
+  }
+
+  /* Product card surface */
+  .product-card-media {
+    border: 1px solid transparent;
+    box-shadow: 0 0 0 0 transparent;
+    transition:
+      border-color 300ms var(--ease-luxury),
+      box-shadow 350ms var(--ease-luxury),
+      background-color 300ms var(--ease-luxury);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .group:hover .product-card-media {
+      border-color: color-mix(in oklab, var(--theme-fg) 12%, transparent);
+      box-shadow: 0 14px 36px rgb(0 0 0 / 0.16);
+    }
+  }
+
+  .product-card-img {
+    transition: transform 700ms var(--ease-luxury), opacity 500ms var(--ease-luxury);
+    will-change: transform;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .group:hover .product-card-img {
+      transform: scale(1.03);
+    }
+  }
+
+  .product-card-media:active .product-card-img {
+    transform: scale(1.015);
+  }
+
+  /* Wishlist icon on cards — soft presence */
+  .wishlist-float {
+    transition:
+      opacity 280ms var(--ease-luxury),
+      transform 280ms var(--ease-luxury),
+      background-color 280ms var(--ease-luxury),
+      color 280ms var(--ease-luxury);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .wishlist-float.is-idle {
+      opacity: 0.72;
+    }
+
+    .group:hover .wishlist-float.is-idle {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+  }
+
+  /* Badge pulse-free soft update */
+  .count-badge {
+    transition:
+      transform 250ms var(--ease-luxury),
+      opacity 250ms var(--ease-luxury),
+      background-color 250ms var(--ease-luxury);
+  }
+
+  /* Category media */
+  .category-card-img {
+    transition: transform 700ms var(--ease-luxury);
+    will-change: transform;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .group:hover .category-card-img {
+      transform: scale(1.04);
+    }
+  }
+
+  .category-card-title {
+    transition: color 280ms var(--ease-luxury), opacity 280ms var(--ease-luxury);
+  }
+
+  /* Gallery crossfade helper */
+  .gallery-img {
+    transition: opacity 350ms var(--ease-luxury);
+  }
+
+  /* Shop filter grid fade */
+  .grid-fade {
+    transition: opacity 280ms var(--ease-luxury), transform 280ms var(--ease-luxury);
+  }
+
+  .grid-fade.is-fading {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  /* Chip / pill active transitions */
+  .chip-luxury {
+    transition:
+      background-color 250ms var(--ease-luxury),
+      color 250ms var(--ease-luxury),
+      border-color 250ms var(--ease-luxury),
+      transform 220ms var(--ease-luxury),
+      box-shadow 250ms var(--ease-luxury);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .chip-luxury:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  .chip-luxury:active {
+    transform: scale(0.97);
+  }
+
+  /* Contact action cards */
+  .contact-action {
+    transition:
+      transform 250ms var(--ease-luxury),
+      background-color 280ms var(--ease-luxury),
+      border-color 280ms var(--ease-luxury),
+      box-shadow 280ms var(--ease-luxury),
+      color 250ms var(--ease-luxury);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .contact-action:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgb(0 0 0 / 0.1);
+    }
+  }
+
+  .contact-action:active {
+    transform: translateY(0) scale(0.99);
+  }
+
+  .contact-action .contact-icon {
+    transition: transform 280ms var(--ease-luxury), color 250ms var(--ease-luxury);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .contact-action:hover .contact-icon {
+      transform: scale(1.06);
+    }
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--theme-scrollbar-track);
+  transition: background-color 300ms var(--ease-luxury);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-scrollbar-thumb);
+  border-radius: 4px;
+  transition: background-color 250ms var(--ease-luxury);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c4a574;
+}
+
+/* Range input */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  background: var(--theme-range-track);
+  border-radius: 2px;
+  outline: none;
+  transition: background-color 300ms var(--ease-luxury);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #c4a574;
+  cursor: pointer;
+  border: 2px solid var(--theme-bg);
+  transition: transform 200ms var(--ease-luxury);
+}
+
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.08);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #c4a574;
+  cursor: pointer;
+  border: 2px solid var(--theme-bg);
+  transition: transform 200ms var(--ease-luxury);
+}
+
+/* Select options follow theme */
+select option {
+  background: var(--theme-select-bg);
+  color: var(--theme-select-fg);
+}
+
+/* Form fields soft focus */
+input,
+textarea,
+select {
+  transition:
+    border-color 250ms var(--ease-luxury),
+    background-color 300ms var(--ease-luxury),
+    color 300ms var(--ease-luxury),
+    box-shadow 250ms var(--ease-luxury);
+}
