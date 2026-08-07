@@ -7,7 +7,7 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, handleFirestoreError, OperationType } from './firebase';
 import type { FirestoreSettings, FirestoreContact } from './types';
 
 const SETTINGS_COLLECTION = 'settings';
@@ -171,6 +171,7 @@ export function subscribeToSettings(
     },
     (error) => {
       console.error('Error listening to settings doc:', error);
+      handleFirestoreError(error, OperationType.GET, SETTINGS_COLLECTION);
     }
   );
 }
@@ -284,6 +285,7 @@ export function subscribeToContact(
     },
     (error) => {
       console.error('Error listening to contact doc:', error);
+      handleFirestoreError(error, OperationType.GET, CONTACT_COLLECTION);
     }
   );
 }

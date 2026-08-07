@@ -1,12 +1,10 @@
 {
-  "projectId": "tuned-dolphin-2j1d7",
-  "appId": "1:1000742431083:web:d50bc14ab55e261355042e",
-  "apiKey": "AIzaSyBrog0M78KcZ7GFSIbzb9b8kNC9vVKgUl8",
-  "authDomain": "tuned-dolphin-2j1d7.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-remixzadelquietl-aea69160-6ccd-48a9-a730-5424efc5d50e",
-  "storageBucket": "tuned-dolphin-2j1d7.firebasestorage.app",
-  "messagingSenderId": "1000742431083",
-  "measurementId": "",
-  "oAuthClientId": "1000742431083-roo4grhmf7cg5921opq9pj0s8hbst8c1.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "apiKey": "AIzaSyBd1ys2iCrQrtRpKCklNp_rAgv-qXVgCuc",
+  "authDomain": "zadel-v2.firebaseapp.com",
+  "projectId": "zadel-v2",
+  "storageBucket": "zadel-v2.firebasestorage.app",
+  "messagingSenderId": "349089195745",
+  "appId": "1:349089195745:web:0e9fff8abf9a69e3b8f9a0",
+  "measurementId": "G-H9Z6B8HK83",
+  "firestoreDatabaseId": "(default)"
 }

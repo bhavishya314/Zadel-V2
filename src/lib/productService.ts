@@ -9,7 +9,7 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, handleFirestoreError, OperationType } from './firebase';
 import type { FirestoreProduct } from './types';
 import { products as initialProducts } from './products';
 
@@ -260,6 +260,7 @@ export function subscribeToProducts(
     },
     (error) => {
       console.error('Error listening to Firestore products:', error);
+      handleFirestoreError(error, OperationType.GET, PRODUCTS_COLLECTION);
     }
   );
 }

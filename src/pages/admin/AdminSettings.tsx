@@ -24,12 +24,29 @@ import {
   deleteHeroImageFromStorage,
 } from '../../lib/firebase';
 import type { FirestoreSettings } from '../../lib/types';
+import AdminConfirmModal from '../../components/AdminConfirmModal';
+import AdminToast, { ToastMessage } from '../../components/AdminToast';
 
 export default function AdminSettings() {
   const { user } = useAuth();
 
   const [settings, setSettings] = useState<FirestoreSettings | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Toast state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = (type: 'success' | 'error' | 'info', message: string) => {
+    const id = Date.now().toString();
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Form Fields
   const [brandName, setBrandName] = useState('');
@@ -44,16 +61,22 @@ export default function AdminSettings() {
   const [deletingLogo, setDeletingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Confirm delete logo modal state
+  const [isDeleteLogoConfirmOpen, setIsDeleteLogoConfirmOpen] = useState(false);
+
   // Hero upload / replace / delete state
   const [uploadingHero, setUploadingHero] = useState(false);
   const [replacingHeroIndex, setReplacingHeroIndex] = useState<number | null>(null);
   const [deletingHeroIndex, setDeletingHeroIndex] = useState<number | null>(null);
+
+  // Confirm delete hero modal state
+  const [heroToDeleteIndex, setHeroToDeleteIndex] = useState<number | null>(null);
+
   const heroFileInputRef = useRef<HTMLInputElement>(null);
   const heroReplaceInputRef = useRef<HTMLInputElement>(null);
 
   // Saving states
   const [saving, setSaving] = useState(false);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,7 +107,6 @@ export default function AdminSettings() {
 
     const file = files[0];
     setUploadingLogo(true);
-    setSuccessMsg(null);
     setErrorMsg(null);
 
     try {
@@ -105,11 +127,11 @@ export default function AdminSettings() {
         deleteBrandLogoFromStorage(oldLogoUrl).catch(() => {});
       }
 
-      setSuccessMsg('Brand Logo uploaded to Firebase Storage and saved in Firestore! Customer website updated instantly.');
-      setTimeout(() => setSuccessMsg(null), 5000);
+      addToast('success', 'Brand Logo uploaded to Firebase Storage and saved!');
     } catch (err) {
       console.error('Error uploading brand logo:', err);
-      setErrorMsg('Failed to upload logo to Firebase Storage. Please try again.');
+      setErrorMsg('Failed to upload logo to Firebase Storage.');
+      addToast('error', 'Failed to upload logo.');
     } finally {
       setUploadingLogo(false);
       if (fileInputRef.current) {
@@ -118,13 +140,11 @@ export default function AdminSettings() {
     }
   };
 
-  // Handle Logo Delete
-  const handleDeleteLogo = async () => {
+  // Handle Logo Delete Confirm
+  const handleConfirmDeleteLogo = async () => {
     if (!logo) return;
-    if (!window.confirm('Are you sure you want to delete the brand logo?')) return;
 
     setDeletingLogo(true);
-    setSuccessMsg(null);
     setErrorMsg(null);
 
     try {
@@ -139,14 +159,14 @@ export default function AdminSettings() {
       });
 
       setLogo('');
-
       await deleteBrandLogoFromStorage(targetUrl);
 
-      setSuccessMsg('Brand Logo deleted from Firebase Storage and Firestore. Customer website updated instantly.');
-      setTimeout(() => setSuccessMsg(null), 5000);
+      addToast('success', 'Brand Logo deleted from Firebase Storage and Firestore.');
+      setIsDeleteLogoConfirmOpen(false);
     } catch (err) {
       console.error('Error deleting brand logo:', err);
       setErrorMsg('Failed to delete brand logo.');
+      addToast('error', 'Failed to delete logo.');
     } finally {
       setDeletingLogo(false);
     }
@@ -158,7 +178,6 @@ export default function AdminSettings() {
     if (!files || files.length === 0) return;
 
     setUploadingHero(true);
-    setSuccessMsg(null);
     setErrorMsg(null);
 
     try {
@@ -180,11 +199,11 @@ export default function AdminSettings() {
       setHeroImage(primaryUrl);
       setHeroImages(updatedHeroImages);
 
-      setSuccessMsg(`${newUrls.length} Hero image(s) uploaded to Firebase Storage and saved in Firestore! Customer website updated instantly.`);
-      setTimeout(() => setSuccessMsg(null), 5000);
+      addToast('success', `${newUrls.length} Hero image(s) uploaded to Firebase Storage.`);
     } catch (err) {
       console.error('Error uploading hero image(s):', err);
       setErrorMsg('Failed to upload hero image(s) to Firebase Storage.');
+      addToast('error', 'Failed to upload hero images.');
     } finally {
       setUploadingHero(false);
       if (heroFileInputRef.current) {
@@ -211,7 +230,6 @@ export default function AdminSettings() {
     const file = files[0];
     const targetIndex = replacingHeroIndex;
     setUploadingHero(true);
-    setSuccessMsg(null);
     setErrorMsg(null);
 
     try {
@@ -235,11 +253,11 @@ export default function AdminSettings() {
         deleteHeroImageFromStorage(oldUrl).catch(() => {});
       }
 
-      setSuccessMsg('Hero image replaced in Firebase Storage and updated in Firestore! Customer website updated instantly.');
-      setTimeout(() => setSuccessMsg(null), 5000);
+      addToast('success', 'Hero image replaced in Firebase Storage and updated.');
     } catch (err) {
       console.error('Error replacing hero image:', err);
       setErrorMsg('Failed to replace hero image.');
+      addToast('error', 'Failed to replace hero image.');
     } finally {
       setUploadingHero(false);
       setReplacingHeroIndex(null);
@@ -249,15 +267,15 @@ export default function AdminSettings() {
     }
   };
 
-  // Handle Delete Hero Image
-  const handleDeleteHero = async (index: number) => {
+  // Handle Confirm Delete Hero Image
+  const handleConfirmDeleteHero = async () => {
+    if (heroToDeleteIndex === null) return;
+
+    const index = heroToDeleteIndex;
     const targetUrl = heroImages[index];
     if (!targetUrl) return;
 
-    if (!window.confirm('Are you sure you want to delete this hero image?')) return;
-
     setDeletingHeroIndex(index);
-    setSuccessMsg(null);
     setErrorMsg(null);
 
     try {
@@ -275,11 +293,12 @@ export default function AdminSettings() {
 
       await deleteHeroImageFromStorage(targetUrl);
 
-      setSuccessMsg('Hero image deleted from Firebase Storage and Firestore. Customer website updated instantly.');
-      setTimeout(() => setSuccessMsg(null), 5000);
+      addToast('success', 'Hero image deleted from Firebase Storage.');
+      setHeroToDeleteIndex(null);
     } catch (err) {
       console.error('Error deleting hero image:', err);
       setErrorMsg('Failed to delete hero image.');
+      addToast('error', 'Failed to delete hero image.');
     } finally {
       setDeletingHeroIndex(null);
     }
@@ -301,11 +320,10 @@ export default function AdminSettings() {
       setHeroImage(selectedUrl);
       setHeroImages(updatedHeroImages);
 
-      setSuccessMsg('Primary Hero image updated! Customer website updated instantly.');
-      setTimeout(() => setSuccessMsg(null), 4000);
+      addToast('success', 'Primary Hero image updated! Homepage banner updated.');
     } catch (err) {
       console.error('Error setting primary hero image:', err);
-      setErrorMsg('Failed to set primary hero image.');
+      addToast('error', 'Failed to set primary hero image.');
     }
   };
 
@@ -313,7 +331,6 @@ export default function AdminSettings() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setSuccessMsg(null);
     setErrorMsg(null);
 
     try {
@@ -326,11 +343,11 @@ export default function AdminSettings() {
         heroImage: heroImage.trim(),
         heroImages: heroImages,
       });
-      setSuccessMsg('Website branding & hero settings saved to Firestore! Customer website updated instantly.');
-      setTimeout(() => setSuccessMsg(null), 4000);
+      addToast('success', 'Website branding and settings saved to Firestore.');
     } catch (err) {
       console.error('Error updating website settings:', err);
-      setErrorMsg('Failed to update website settings. Please try again.');
+      setErrorMsg('Failed to update website settings.');
+      addToast('error', 'Failed to save settings.');
     } finally {
       setSaving(false);
     }
@@ -338,7 +355,33 @@ export default function AdminSettings() {
 
   return (
     <div className="space-y-6">
-      {/* Hidden File Input for Logo Upload / Replace */}
+      <AdminToast toasts={toasts} onDismiss={removeToast} />
+
+      {/* Delete Logo Confirm Modal */}
+      <AdminConfirmModal
+        isOpen={isDeleteLogoConfirmOpen}
+        title="Delete Brand Logo"
+        description="Are you sure you want to permanently delete the brand logo from Firebase Storage? The website header will fall back to standard typography."
+        confirmText="Delete Logo"
+        variant="danger"
+        loading={deletingLogo}
+        onConfirm={handleConfirmDeleteLogo}
+        onClose={() => setIsDeleteLogoConfirmOpen(false)}
+      />
+
+      {/* Delete Hero Image Confirm Modal */}
+      <AdminConfirmModal
+        isOpen={heroToDeleteIndex !== null}
+        title="Delete Hero Banner Image"
+        description="Are you sure you want to delete this hero banner image from Firebase Storage?"
+        confirmText="Delete Banner"
+        variant="danger"
+        loading={deletingHeroIndex !== null}
+        onConfirm={handleConfirmDeleteHero}
+        onClose={() => setHeroToDeleteIndex(null)}
+      />
+
+      {/* Hidden File Inputs */}
       <input
         type="file"
         ref={fileInputRef}
@@ -347,7 +390,6 @@ export default function AdminSettings() {
         className="hidden"
       />
 
-      {/* Hidden File Input for Hero Upload */}
       <input
         type="file"
         ref={heroFileInputRef}
@@ -357,7 +399,6 @@ export default function AdminSettings() {
         className="hidden"
       />
 
-      {/* Hidden File Input for Hero Replace */}
       <input
         type="file"
         ref={heroReplaceInputRef}
@@ -373,18 +414,18 @@ export default function AdminSettings() {
             <SettingsIcon className="h-3.5 w-3.5" />
             <span>Admin Management</span>
           </div>
-          <h1 className="font-display text-3xl text-foreground">
-            System Settings
+          <h1 className="font-display text-2xl sm:text-3xl text-foreground">
+            System & Media Settings
           </h1>
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-emerald-950/50 border border-emerald-800/40 px-3 py-1.5 text-xs text-emerald-400">
+        <div className="flex items-center gap-2 rounded-xl bg-emerald-950/50 border border-emerald-800/40 px-3 py-2 text-xs text-emerald-400">
           <ShieldCheck className="h-4 w-4" />
-          <span>Synced with Firestore</span>
+          <span className="hidden sm:inline">Synced with Firestore</span>
         </div>
       </div>
 
       {/* Website Settings Form Card */}
-      <div className="rounded-xl border border-neutral-800 bg-zadel-elevated p-6 space-y-6">
+      <div className="rounded-xl border border-neutral-800 bg-zadel-elevated p-5 sm:p-6 space-y-6">
         <div className="space-y-1">
           <h2 className="text-sm font-medium uppercase tracking-wider text-neutral-300 flex items-center gap-2">
             <Globe className="h-4 w-4 text-zadel-gold" />
@@ -402,13 +443,6 @@ export default function AdminSettings() {
           </div>
         ) : (
           <form onSubmit={handleSave} className="space-y-6 text-xs">
-            {successMsg && (
-              <div className="p-3 bg-emerald-950/60 border border-emerald-800/50 text-emerald-300 rounded-lg flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>{successMsg}</span>
-              </div>
-            )}
-
             {errorMsg && (
               <div className="p-3 bg-red-950/60 border border-red-800/50 text-red-300 rounded-lg">
                 {errorMsg}
@@ -416,7 +450,7 @@ export default function AdminSettings() {
             )}
 
             {/* Brand Logo Upload / Replace / Delete Management Card */}
-            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5 space-y-4">
+            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4 sm:p-5 space-y-4">
               <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
                 <div className="flex items-center gap-2 text-neutral-200 font-medium">
                   <ImageIcon className="h-4 w-4 text-zadel-gold" />
@@ -466,15 +500,11 @@ export default function AdminSettings() {
 
                     <button
                       type="button"
-                      onClick={handleDeleteLogo}
+                      onClick={() => setIsDeleteLogoConfirmOpen(true)}
                       disabled={uploadingLogo || deletingLogo}
                       className="flex items-center gap-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/60 px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      {deletingLogo ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-red-400" />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
-                      )}
+                      <Trash2 className="h-3.5 w-3.5" />
                       <span>Delete</span>
                     </button>
                   </div>
@@ -510,15 +540,15 @@ export default function AdminSettings() {
             </div>
 
             {/* Hero Image Management Section */}
-            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
+            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4 sm:p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-900 pb-3">
                 <div className="flex items-center gap-2 text-neutral-200 font-medium">
                   <ImageIcon className="h-4 w-4 text-zadel-gold" />
                   <span>Hero Banner Image Management</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-mono uppercase text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/50">
-                    Firebase Storage & Firestore
+                    Firebase Storage
                   </span>
                   <button
                     type="button"
@@ -622,15 +652,11 @@ export default function AdminSettings() {
 
                             <button
                               type="button"
-                              onClick={() => handleDeleteHero(index)}
+                              onClick={() => setHeroToDeleteIndex(index)}
                               disabled={uploadingHero || isDeleting}
                               className="flex items-center gap-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/60 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
                             >
-                              {isDeleting ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin text-red-400" />
-                              ) : (
-                                <Trash2 className="h-3.5 w-3.5" />
-                              )}
+                              <Trash2 className="h-3.5 w-3.5" />
                               <span>Delete</span>
                             </button>
                           </div>

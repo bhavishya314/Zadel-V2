@@ -10,7 +10,7 @@ import {
   where,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, handleFirestoreError, OperationType } from './firebase';
 import type { FirestoreReview } from './types';
 
 const REVIEWS_COLLECTION = 'reviews';
@@ -196,6 +196,7 @@ export function subscribeToAllReviews(
     },
     (error) => {
       console.error('Error subscribing to reviews:', error);
+      handleFirestoreError(error, OperationType.GET, REVIEWS_COLLECTION);
     }
   );
 }

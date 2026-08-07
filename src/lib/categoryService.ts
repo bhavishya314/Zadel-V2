@@ -8,7 +8,7 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, handleFirestoreError, OperationType } from './firebase';
 import type { FirestoreCategory } from './types';
 
 const CATEGORIES_COLLECTION = 'categories';
@@ -209,6 +209,7 @@ export function subscribeToCategories(
     },
     (error) => {
       console.error('Error listening to categories:', error);
+      handleFirestoreError(error, OperationType.GET, CATEGORIES_COLLECTION);
     }
   );
 }
