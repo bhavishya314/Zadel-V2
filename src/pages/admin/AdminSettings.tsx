@@ -18,11 +18,13 @@ import { useAuth } from '../../context/AuthContext';
 import {
   subscribeToSettings,
   updateSettings,
+} from '../../lib/firebase';
+import {
   uploadBrandLogoToStorage,
   deleteBrandLogoFromStorage,
   uploadHeroImageToStorage,
   deleteHeroImageFromStorage,
-} from '../../lib/firebase';
+} from '../../lib/cloudinary';
 import type { FirestoreSettings } from '../../lib/types';
 import AdminConfirmModal from '../../components/AdminConfirmModal';
 import AdminToast, { ToastMessage } from '../../components/AdminToast';
@@ -127,10 +129,10 @@ export default function AdminSettings() {
         deleteBrandLogoFromStorage(oldLogoUrl).catch(() => {});
       }
 
-      addToast('success', 'Brand Logo uploaded to Firebase Storage and saved!');
+      addToast('success', 'Brand Logo uploaded to Cloudinary and saved!');
     } catch (err) {
       console.error('Error uploading brand logo:', err);
-      setErrorMsg('Failed to upload logo to Firebase Storage.');
+      setErrorMsg('Failed to upload logo to Cloudinary.');
       addToast('error', 'Failed to upload logo.');
     } finally {
       setUploadingLogo(false);
@@ -161,7 +163,7 @@ export default function AdminSettings() {
       setLogo('');
       await deleteBrandLogoFromStorage(targetUrl);
 
-      addToast('success', 'Brand Logo deleted from Firebase Storage and Firestore.');
+      addToast('success', 'Brand Logo deleted from Cloudinary and Firestore.');
       setIsDeleteLogoConfirmOpen(false);
     } catch (err) {
       console.error('Error deleting brand logo:', err);
@@ -199,10 +201,10 @@ export default function AdminSettings() {
       setHeroImage(primaryUrl);
       setHeroImages(updatedHeroImages);
 
-      addToast('success', `${newUrls.length} Hero image(s) uploaded to Firebase Storage.`);
+      addToast('success', `${newUrls.length} Hero image(s) uploaded to Cloudinary.`);
     } catch (err) {
       console.error('Error uploading hero image(s):', err);
-      setErrorMsg('Failed to upload hero image(s) to Firebase Storage.');
+      setErrorMsg('Failed to upload hero image(s) to Cloudinary.');
       addToast('error', 'Failed to upload hero images.');
     } finally {
       setUploadingHero(false);
@@ -253,7 +255,7 @@ export default function AdminSettings() {
         deleteHeroImageFromStorage(oldUrl).catch(() => {});
       }
 
-      addToast('success', 'Hero image replaced in Firebase Storage and updated.');
+      addToast('success', 'Hero image replaced in Cloudinary and updated.');
     } catch (err) {
       console.error('Error replacing hero image:', err);
       setErrorMsg('Failed to replace hero image.');
@@ -293,7 +295,7 @@ export default function AdminSettings() {
 
       await deleteHeroImageFromStorage(targetUrl);
 
-      addToast('success', 'Hero image deleted from Firebase Storage.');
+      addToast('success', 'Hero image deleted from Cloudinary.');
       setHeroToDeleteIndex(null);
     } catch (err) {
       console.error('Error deleting hero image:', err);
@@ -361,7 +363,7 @@ export default function AdminSettings() {
       <AdminConfirmModal
         isOpen={isDeleteLogoConfirmOpen}
         title="Delete Brand Logo"
-        description="Are you sure you want to permanently delete the brand logo from Firebase Storage? The website header will fall back to standard typography."
+        description="Are you sure you want to permanently delete the brand logo from Cloudinary? The website header will fall back to standard typography."
         confirmText="Delete Logo"
         variant="danger"
         loading={deletingLogo}
@@ -373,7 +375,7 @@ export default function AdminSettings() {
       <AdminConfirmModal
         isOpen={heroToDeleteIndex !== null}
         title="Delete Hero Banner Image"
-        description="Are you sure you want to delete this hero banner image from Firebase Storage?"
+        description="Are you sure you want to delete this hero banner image from Cloudinary?"
         confirmText="Delete Banner"
         variant="danger"
         loading={deletingHeroIndex !== null}
@@ -432,7 +434,7 @@ export default function AdminSettings() {
             <span>Website Branding & Media Settings</span>
           </h2>
           <p className="text-xs text-neutral-400">
-            Manage global store name, brand logo, and hero banner images stored in Firebase Storage and Firestore.
+            Manage global store name, brand logo, and hero banner images stored in Cloudinary and Firestore.
           </p>
         </div>
 
@@ -457,7 +459,7 @@ export default function AdminSettings() {
                   <span>Brand Logo Management</span>
                 </div>
                 <span className="text-[10px] font-mono uppercase text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/50">
-                  Firebase Storage
+                  Cloudinary
                 </span>
               </div>
 
@@ -516,7 +518,7 @@ export default function AdminSettings() {
                   <div>
                     <p className="font-medium text-neutral-300">No Brand Logo Uploaded</p>
                     <p className="text-[11px] text-neutral-500">
-                      Upload a logo image (.png, .svg, .webp, .jpg) to Firebase Storage
+                      Upload a logo image (.png, .svg, .webp, .jpg) to Cloudinary
                     </p>
                   </div>
 
@@ -532,7 +534,7 @@ export default function AdminSettings() {
                       ) : (
                         <Upload className="h-4 w-4" />
                       )}
-                      <span>{uploadingLogo ? 'Uploading to Firebase Storage...' : 'Upload Brand Logo'}</span>
+                      <span>{uploadingLogo ? 'Uploading to Cloudinary...' : 'Upload Brand Logo'}</span>
                     </button>
                   </div>
                 </div>
@@ -548,7 +550,7 @@ export default function AdminSettings() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-mono uppercase text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/50">
-                    Firebase Storage
+                    Cloudinary
                   </span>
                   <button
                     type="button"
@@ -672,7 +674,7 @@ export default function AdminSettings() {
                   <div>
                     <p className="font-medium text-neutral-300">No Hero Banner Images Uploaded</p>
                     <p className="text-[11px] text-neutral-500">
-                      Upload high-resolution banner images to Firebase Storage to display on the customer homepage
+                      Upload high-resolution banner images to Cloudinary to display on the customer homepage
                     </p>
                   </div>
 
@@ -688,7 +690,7 @@ export default function AdminSettings() {
                       ) : (
                         <Upload className="h-4 w-4" />
                       )}
-                      <span>{uploadingHero ? 'Uploading to Firebase Storage...' : 'Upload Hero Image'}</span>
+                      <span>{uploadingHero ? 'Uploading to Cloudinary...' : 'Upload Hero Image'}</span>
                     </button>
                   </div>
                 </div>
@@ -715,17 +717,17 @@ export default function AdminSettings() {
 
               <div>
                 <label className="block mb-1.5 font-medium text-neutral-300">
-                  Logo URL (Manual or Storage URL)
+                  Logo URL (Manual or Cloudinary URL)
                 </label>
                 <input
                   type="text"
                   value={logo}
                   onChange={(e) => setLogo(e.target.value)}
-                  placeholder="https://firebasestorage.googleapis.com/... or asset path"
+                  placeholder="https://res.cloudinary.com/... or asset path"
                   className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none font-mono text-[11px]"
                 />
                 <p className="mt-1 text-[11px] text-neutral-500">
-                  Direct Firebase Storage download URL or external image link.
+                  Direct Cloudinary secure_url or external image link.
                 </p>
               </div>
             </div>
@@ -770,11 +772,11 @@ export default function AdminSettings() {
             <span className="text-emerald-400 font-mono">Active</span>
           </div>
           <div className="py-3 flex items-center justify-between">
-            <span className="text-neutral-300">Firebase Storage Brand Logo Uploads</span>
+            <span className="text-neutral-300">Cloudinary Brand Logo Uploads</span>
             <span className="text-emerald-400 font-mono">Active</span>
           </div>
           <div className="py-3 flex items-center justify-between">
-            <span className="text-neutral-300">Firebase Storage Hero Banner Uploads</span>
+            <span className="text-neutral-300">Cloudinary Hero Banner Uploads</span>
             <span className="text-emerald-400 font-mono">Active</span>
           </div>
           <div className="py-3 flex items-center justify-between">

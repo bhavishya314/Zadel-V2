@@ -25,9 +25,11 @@ import {
   updateProduct,
   addProduct,
   deleteProduct,
+} from '../../lib/firebase';
+import {
   uploadProductImageToStorage,
   deleteProductImageFromStorage,
-} from '../../lib/firebase';
+} from '../../lib/cloudinary';
 import type { FirestoreProduct } from '../../lib/types';
 import AdminConfirmModal from '../../components/AdminConfirmModal';
 import AdminToast, { ToastMessage } from '../../components/AdminToast';
@@ -144,7 +146,7 @@ export default function AdminProducts() {
     setImages([]);
   };
 
-  // Upload multiple images to Firebase Storage
+  // Upload multiple images to Cloudinary
   const handleMultipleFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !selectedProduct) return;
@@ -157,14 +159,14 @@ export default function AdminProducts() {
     try {
       for (let i = 0; i < total; i++) {
         const file = files[i];
-        setUploadProgressMsg(`Uploading image ${i + 1} of ${total} to Firebase Storage...`);
+        setUploadProgressMsg(`Uploading image ${i + 1} of ${total} to Cloudinary...`);
         const url = await uploadProductImageToStorage(file, selectedProduct.id);
         uploadedUrls.push(url);
       }
 
       const updatedList = [...images, ...uploadedUrls];
       setImages(updatedList);
-      addToast('success', `Uploaded ${total} image(s) to Firebase Storage.`);
+      addToast('success', `Uploaded ${total} image(s) to Cloudinary.`);
     } catch (err) {
       console.error('Error uploading images:', err);
       addToast('error', 'Failed to upload image(s). Please try again.');
@@ -194,7 +196,7 @@ export default function AdminProducts() {
     const indexToReplace = replacingIndex;
 
     setUploading(true);
-    setUploadProgressMsg('Uploading replacement image to Firebase Storage...');
+    setUploadProgressMsg('Uploading replacement image to Cloudinary...');
 
     try {
       const oldUrl = images[indexToReplace];
@@ -205,7 +207,7 @@ export default function AdminProducts() {
       setImages(updatedList);
 
       deleteProductImageFromStorage(oldUrl).catch(() => {});
-      addToast('success', 'Image replaced in Firebase Storage.');
+      addToast('success', 'Image replaced in Cloudinary.');
     } catch (err) {
       console.error('Error replacing image:', err);
       addToast('error', 'Failed to replace image.');
@@ -612,13 +614,13 @@ export default function AdminProducts() {
             <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-zadel-gold">
-                  Firebase Storage Gallery
+                  Cloudinary Gallery
                 </span>
                 <h2 className="font-display text-xl text-foreground">
                   Product Images: {selectedProduct.name || selectedProduct.title}
                 </h2>
                 <p className="text-xs text-neutral-400">
-                  Upload multiple images to Firebase Storage, replace, reorder, or delete.
+                  Upload multiple images to Cloudinary, replace, reorder, or delete.
                 </p>
               </div>
               <button
@@ -636,7 +638,7 @@ export default function AdminProducts() {
               <Upload className="h-8 w-8 text-zadel-gold mx-auto" />
               <div>
                 <p className="text-xs font-medium text-neutral-200">
-                  Upload Multiple Images to Firebase Storage
+                  Upload Multiple Images to Cloudinary
                 </p>
                 <p className="text-[11px] text-neutral-500">
                   Select one or more image files (.jpg, .png, .webp, .svg)
@@ -665,7 +667,7 @@ export default function AdminProducts() {
                   ) : (
                     <Upload className="h-4 w-4" />
                   )}
-                  <span>{uploading ? 'Uploading to Firebase Storage...' : 'Choose Multiple Files'}</span>
+                  <span>{uploading ? 'Uploading to Cloudinary...' : 'Choose Multiple Files'}</span>
                 </label>
               </div>
 
@@ -687,7 +689,7 @@ export default function AdminProducts() {
 
               {images.length === 0 ? (
                 <div className="p-8 text-center text-xs text-neutral-500 border border-neutral-800 rounded-xl bg-neutral-950/40">
-                  No images uploaded yet. Use the button above to upload images to Firebase Storage.
+                  No images uploaded yet. Use the button above to upload images to Cloudinary.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
