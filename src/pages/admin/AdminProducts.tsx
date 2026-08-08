@@ -22,7 +22,7 @@ import {
   Star,
   Flame,
   Sparkles,
-  DollarSign,
+  IndianRupee,
   Percent,
 } from 'lucide-react';
 import {
@@ -442,7 +442,7 @@ export default function AdminProducts() {
     }
 
     if (priceVal > mrpVal) {
-      setFormError(`Store Selling Price ($${priceVal.toLocaleString()}) cannot exceed Actual MRP ($${mrpVal.toLocaleString()}).`);
+      setFormError(`Store Selling Price (₹${priceVal.toLocaleString()}) cannot exceed Actual MRP (₹${mrpVal.toLocaleString()}).`);
       return;
     }
 
@@ -762,16 +762,16 @@ export default function AdminProducts() {
                           <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-mono mt-1">
                             <span className="text-neutral-400">Gallery: {product.images?.length || 0} image(s)</span>
                             <span className="text-neutral-700">•</span>
-                            <span className="text-neutral-200 font-semibold">Store Price: ${price.toLocaleString()}</span>
+                            <span className="text-neutral-200 font-semibold">Store Price: ₹{price.toLocaleString()}</span>
                             {mrp > price ? (
                               <>
-                                <span className="text-neutral-500">MRP: <span className="line-through">${mrp.toLocaleString()}</span></span>
+                                <span className="text-neutral-500">MRP: <span className="line-through">₹{mrp.toLocaleString()}</span></span>
                                 <span className="bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 px-1.5 py-0.2 rounded font-bold text-[10px]">
                                   {discount}% OFF
                                 </span>
                               </>
                             ) : (
-                              <span className="text-neutral-500">MRP: ${mrp.toLocaleString()}</span>
+                              <span className="text-neutral-500">MRP: ₹{mrp.toLocaleString()}</span>
                             )}
                           </div>
                         );
@@ -1173,7 +1173,7 @@ export default function AdminProducts() {
               <div className="p-3.5 rounded-xl border border-neutral-800 bg-neutral-950/80 space-y-3">
                 <div className="flex items-center justify-between border-b border-neutral-800/80 pb-2">
                   <span className="font-semibold text-neutral-200 text-xs flex items-center gap-1.5">
-                    <DollarSign className="h-4 w-4 text-zadel-gold" />
+                    <IndianRupee className="h-4 w-4 text-zadel-gold" />
                     Product Pricing Structure
                   </span>
                   <span className="text-[10px] text-neutral-500 font-mono">
@@ -1185,7 +1185,7 @@ export default function AdminProducts() {
                   {/* Actual MRP */}
                   <div>
                     <label className="block mb-1 font-medium text-neutral-300 text-[11px]">
-                      Actual MRP ($) *
+                      Actual MRP (₹) *
                     </label>
                     <input
                       type="number"
@@ -1202,7 +1202,7 @@ export default function AdminProducts() {
                   {/* Store Selling Price */}
                   <div>
                     <label className="block mb-1 font-medium text-neutral-300 text-[11px]">
-                      Store Selling Price ($) *
+                      Store Selling Price (₹) *
                     </label>
                     <input
                       type="number"
@@ -1242,17 +1242,17 @@ export default function AdminProducts() {
                 <div className="text-[11px] text-neutral-400 bg-neutral-900/90 border border-neutral-800/80 rounded-lg p-2.5 flex items-center justify-between">
                   <div className="space-y-0.5 w-full">
                     <div className="flex items-center gap-2">
-                      <span>MRP: <strong className="text-neutral-200">${formMrp.toLocaleString()}</strong></span>
+                      <span>MRP: <strong className="text-neutral-200">₹{formMrp.toLocaleString()}</strong></span>
                       <span>→</span>
-                      <span>Store Price: <strong className="text-zadel-gold">${formPrice.toLocaleString()}</strong></span>
+                      <span>Store Price: <strong className="text-zadel-gold">₹{formPrice.toLocaleString()}</strong></span>
                     </div>
                     {formMrp > 0 && formPrice < formMrp ? (
                       <p className="text-emerald-400 text-[10px]">
-                        Customer saves ${(formMrp - formPrice).toLocaleString()} ({Math.round(((formMrp - formPrice) / formMrp) * 100)}% discount applied)
+                        Customer saves ₹{(formMrp - formPrice).toLocaleString()} ({Math.round(((formMrp - formPrice) / formMrp) * 100)}% discount applied)
                       </p>
                     ) : formMrp > 0 && formPrice > formMrp ? (
                       <p className="text-rose-400 text-[10px] font-semibold">
-                        ❌ Store Selling Price cannot exceed Actual MRP (${formMrp.toLocaleString()}).
+                        ❌ Store Selling Price cannot exceed Actual MRP (₹{formMrp.toLocaleString()}).
                       </p>
                     ) : (
                       <p className="text-neutral-500 text-[10px]">

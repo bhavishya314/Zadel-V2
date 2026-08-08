@@ -35,7 +35,7 @@ export async function getSettings(): Promise<FirestoreSettings> {
       heroHeadlineLine2: data.heroHeadlineLine2 ?? 'Endlessly worn.',
       heroCtaText: data.heroCtaText ?? 'Shop Collection',
       heroCtaLink: data.heroCtaLink ?? '/shop',
-      currency: data.currency || 'USD',
+      currency: data.currency || 'INR',
       taxRate: typeof data.taxRate === 'number' ? data.taxRate : 0,
       freeShippingThreshold:
         typeof data.freeShippingThreshold === 'number'
@@ -65,7 +65,7 @@ export async function getSettings(): Promise<FirestoreSettings> {
       heroHeadlineLine2: data.heroHeadlineLine2 ?? 'Endlessly worn.',
       heroCtaText: data.heroCtaText ?? 'Shop Collection',
       heroCtaLink: data.heroCtaLink ?? '/shop',
-      currency: data.currency || 'USD',
+      currency: data.currency || 'INR',
       taxRate: typeof data.taxRate === 'number' ? data.taxRate : 0,
       freeShippingThreshold:
         typeof data.freeShippingThreshold === 'number'
@@ -90,7 +90,7 @@ export async function getSettings(): Promise<FirestoreSettings> {
     heroHeadlineLine2: 'Endlessly worn.',
     heroCtaText: 'Shop Collection',
     heroCtaLink: '/shop',
-    currency: 'USD',
+    currency: 'INR',
     taxRate: 0,
     freeShippingThreshold: 150,
     enableReviews: true,
@@ -116,7 +116,7 @@ export async function updateSettings(
     brandName,
     storeName,
     logo: settingsData.logo !== undefined ? settingsData.logo : '',
-    currency: settingsData.currency || 'USD',
+    currency: settingsData.currency || 'INR',
     taxRate: typeof settingsData.taxRate === 'number' ? settingsData.taxRate : 0,
     freeShippingThreshold:
       typeof settingsData.freeShippingThreshold === 'number'
@@ -177,7 +177,7 @@ export function subscribeToSettings(
           heroHeadlineLine2: data.heroHeadlineLine2 ?? 'Endlessly worn.',
           heroCtaText: data.heroCtaText ?? 'Shop Collection',
           heroCtaLink: data.heroCtaLink ?? '/shop',
-          currency: data.currency || 'USD',
+          currency: data.currency || 'INR',
           taxRate: typeof data.taxRate === 'number' ? data.taxRate : 0,
           freeShippingThreshold:
             typeof data.freeShippingThreshold === 'number'
@@ -200,7 +200,7 @@ export function subscribeToSettings(
           heroHeadlineLine2: 'Endlessly worn.',
           heroCtaText: 'Shop Collection',
           heroCtaLink: '/shop',
-          currency: 'USD',
+          currency: 'INR',
           taxRate: 0,
           freeShippingThreshold: 150,
           enableReviews: true,
