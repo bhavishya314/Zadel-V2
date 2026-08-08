@@ -87,7 +87,7 @@ export default function Home() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative flex h-[52vh] items-center overflow-hidden md:h-[60vh] lg:h-[70vh]">
+      <section className="hero-overlay relative flex h-[52vh] items-center overflow-hidden md:h-[60vh] lg:h-[70vh]">
         <div className="absolute inset-0">
           <FadeImage
             src={heroBg}

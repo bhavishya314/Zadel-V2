@@ -8,13 +8,16 @@ export interface Product {
   name: string;
   price: number;
   originalPrice: number;
+  mrp?: number;
   discount: number;
+  discountPercentage?: number;
   category: Category;
   description: string;
   sizes: string[];
   images: string[];
   featured?: boolean;
   bestSeller?: boolean;
+  newArrival?: boolean;
   tags?: string[];
   stock?: number;
   /** Admin publish flag — unpublished products never appear on the storefront */
@@ -44,12 +47,15 @@ export interface FirestoreProduct {
   description: string;
   price: number;
   originalPrice: number;
+  mrp?: number;
   discount: number;
+  discountPercentage?: number;
   category: string;
   sizes: string[];
   stock: number;
   featured: boolean;
   bestSeller: boolean;
+  newArrival?: boolean;
   published: boolean;
   createdAt: string;
   updatedAt: string;

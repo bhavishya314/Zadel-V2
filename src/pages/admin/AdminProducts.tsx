@@ -19,6 +19,11 @@ import {
   ToggleLeft,
   ToggleRight,
   AlertCircle,
+  Star,
+  Flame,
+  Sparkles,
+  DollarSign,
+  Percent,
 } from 'lucide-react';
 import {
   subscribeToProducts,
@@ -70,9 +75,13 @@ export default function AdminProducts() {
   // Form State
   const [formName, setFormName] = useState('');
   const [formCategory, setFormCategory] = useState('Men');
+  const [formMrp, setFormMrp] = useState<number>(0);
   const [formPrice, setFormPrice] = useState<number>(0);
   const [formDescription, setFormDescription] = useState('');
   const [formInStock, setFormInStock] = useState(true);
+  const [formFeatured, setFormFeatured] = useState(false);
+  const [formBestSeller, setFormBestSeller] = useState(false);
+  const [formNewArrival, setFormNewArrival] = useState(false);
   const [formImages, setFormImages] = useState<string[]>([]);
   const [uploadingFormImages, setUploadingFormImages] = useState(false);
   const [formImageProgressMsg, setFormImageProgressMsg] = useState<string | null>(null);
@@ -81,7 +90,13 @@ export default function AdminProducts() {
 
   // Pending Actions State
   const [togglingStockId, setTogglingStockId] = useState<string | null>(null);
+  const [togglingAttributeId, setTogglingAttributeId] = useState<string | null>(null);
   const [savingImages, setSavingImages] = useState(false);
+
+  // Attribute counts across all products
+  const featuredCount = productsList.filter((p) => p.featured).length;
+  const bestSellerCount = productsList.filter((p) => p.bestSeller).length;
+  const newArrivalCount = productsList.filter((p) => p.newArrival).length;
 
   // Confirm Delete Modal State
   const [productToDelete, setProductToDelete] = useState<FirestoreProduct | null>(null);
@@ -135,6 +150,77 @@ export default function AdminProducts() {
       addToast('error', 'Failed to update stock status in Firestore.');
     } finally {
       setTogglingStockId(null);
+    }
+  };
+
+  // Toggle Featured
+  const handleToggleFeatured = async (product: FirestoreProduct) => {
+    const isFeatured = Boolean(product.featured);
+    if (!isFeatured && featuredCount >= 4) {
+      addToast('error', 'Maximum 4 Featured products allowed.');
+      return;
+    }
+
+    setTogglingAttributeId(`${product.id}-featured`);
+    try {
+      await updateProduct(product.id, {
+        featured: !isFeatured,
+      });
+      addToast(
+        'success',
+        `"${product.name || product.title}" is ${!isFeatured ? 'now Featured' : 'no longer Featured'}.`
+      );
+    } catch (err) {
+      console.error('Error toggling featured:', err);
+      addToast('error', 'Failed to update Featured status in Firestore.');
+    } finally {
+      setTogglingAttributeId(null);
+    }
+  };
+
+  // Toggle Best Seller
+  const handleToggleBestSeller = async (product: FirestoreProduct) => {
+    const isBestSeller = Boolean(product.bestSeller);
+    if (!isBestSeller && bestSellerCount >= 4) {
+      addToast('error', 'Maximum 4 Best Seller products allowed.');
+      return;
+    }
+
+    setTogglingAttributeId(`${product.id}-bestseller`);
+    try {
+      await updateProduct(product.id, {
+        bestSeller: !isBestSeller,
+      });
+      addToast(
+        'success',
+        `"${product.name || product.title}" is ${!isBestSeller ? 'now a Best Seller' : 'no longer a Best Seller'}.`
+      );
+    } catch (err) {
+      console.error('Error toggling best seller:', err);
+      addToast('error', 'Failed to update Best Seller status in Firestore.');
+    } finally {
+      setTogglingAttributeId(null);
+    }
+  };
+
+  // Toggle New Arrival
+  const handleToggleNewArrival = async (product: FirestoreProduct) => {
+    const isNewArrival = Boolean(product.newArrival);
+
+    setTogglingAttributeId(`${product.id}-newarrival`);
+    try {
+      await updateProduct(product.id, {
+        newArrival: !isNewArrival,
+      });
+      addToast(
+        'success',
+        `"${product.name || product.title}" is ${!isNewArrival ? 'now a New Arrival' : 'no longer a New Arrival'}.`
+      );
+    } catch (err) {
+      console.error('Error toggling new arrival:', err);
+      addToast('error', 'Failed to update New Arrival status in Firestore.');
+    } finally {
+      setTogglingAttributeId(null);
     }
   };
 
@@ -310,9 +396,13 @@ export default function AdminProducts() {
     setEditingProduct(null);
     setFormName('');
     setFormCategory('Men');
+    setFormMrp(5999);
     setFormPrice(4999);
     setFormDescription('');
     setFormInStock(true);
+    setFormFeatured(false);
+    setFormBestSeller(false);
+    setFormNewArrival(false);
     setFormImages([]);
     setFormError(null);
     setIsProductModalOpen(true);
@@ -322,9 +412,15 @@ export default function AdminProducts() {
     setEditingProduct(prod);
     setFormName(prod.name || prod.title || '');
     setFormCategory(prod.category || 'Men');
-    setFormPrice(prod.price || 0);
+    const existingMrp = prod.originalPrice || prod.mrp || prod.price || 0;
+    const existingPrice = prod.price || 0;
+    setFormMrp(existingMrp);
+    setFormPrice(existingPrice);
     setFormDescription(prod.description || '');
     setFormInStock(prod.inStock ?? true);
+    setFormFeatured(Boolean(prod.featured));
+    setFormBestSeller(Boolean(prod.bestSeller));
+    setFormNewArrival(Boolean(prod.newArrival));
     setFormImages(prod.images || []);
     setFormError(null);
     setIsProductModalOpen(true);
@@ -335,6 +431,48 @@ export default function AdminProducts() {
     if (!formName.trim()) {
       setFormError('Product name is required.');
       return;
+    }
+
+    const mrpVal = Math.max(0, Number(formMrp) || 0);
+    const priceVal = Math.max(0, Number(formPrice) || 0);
+
+    if (mrpVal < 0 || priceVal < 0) {
+      setFormError('Actual MRP and Store Selling Price cannot be negative.');
+      return;
+    }
+
+    if (priceVal > mrpVal) {
+      setFormError(`Store Selling Price ($${priceVal.toLocaleString()}) cannot exceed Actual MRP ($${mrpVal.toLocaleString()}).`);
+      return;
+    }
+
+    // Auto-calculate Discount % rounded to a whole number: ((Actual MRP - Store Price) / Actual MRP) * 100
+    const calculatedDiscount =
+      mrpVal > 0 && priceVal <= mrpVal
+        ? Math.round(((mrpVal - priceVal) / mrpVal) * 100)
+        : 0;
+
+    // Validate limits for Featured and Best Seller
+    if (formFeatured) {
+      const otherFeaturedCount = productsList.filter(
+        (p) => p.featured && p.id !== editingProduct?.id
+      ).length;
+      if (otherFeaturedCount >= 4) {
+        setFormError('Maximum 4 Featured products allowed.');
+        addToast('error', 'Maximum 4 Featured products allowed.');
+        return;
+      }
+    }
+
+    if (formBestSeller) {
+      const otherBestSellerCount = productsList.filter(
+        (p) => p.bestSeller && p.id !== editingProduct?.id
+      ).length;
+      if (otherBestSellerCount >= 4) {
+        setFormError('Maximum 4 Best Seller products allowed.');
+        addToast('error', 'Maximum 4 Best Seller products allowed.');
+        return;
+      }
     }
 
     setSavingProduct(true);
@@ -348,27 +486,41 @@ export default function AdminProducts() {
           name: formName.trim(),
           title: formName.trim(),
           category: formCategory,
-          price: formPrice,
+          price: priceVal,
+          originalPrice: mrpVal,
+          mrp: mrpVal,
+          discount: calculatedDiscount,
+          discountPercentage: calculatedDiscount,
           description: formDescription.trim(),
           images: finalImages,
           inStock: formInStock,
           stock: formInStock ? 10 : 0,
+          featured: formFeatured,
+          bestSeller: formBestSeller,
+          newArrival: formNewArrival,
         });
-        addToast('success', `Product "${formName.trim()}" updated successfully.`);
+        addToast('success', `Product "${formName.trim()}" updated successfully with pricing (${calculatedDiscount}% discount).`);
       } else {
         await addProduct({
           name: formName.trim(),
           title: formName.trim(),
           subtitle: formCategory,
           category: formCategory,
-          price: formPrice,
+          price: priceVal,
+          originalPrice: mrpVal,
+          mrp: mrpVal,
+          discount: calculatedDiscount,
+          discountPercentage: calculatedDiscount,
           description: formDescription.trim(),
           images: finalImages,
           inStock: formInStock,
           stock: formInStock ? 10 : 0,
+          featured: formFeatured,
+          bestSeller: formBestSeller,
+          newArrival: formNewArrival,
           published: true,
         });
-        addToast('success', `Product "${formName.trim()}" created successfully.`);
+        addToast('success', `Product "${formName.trim()}" created successfully with pricing (${calculatedDiscount}% discount).`);
       }
       setIsProductModalOpen(false);
     } catch (err) {
@@ -487,8 +639,27 @@ export default function AdminProducts() {
 
       {/* Products Table Card */}
       <div className="rounded-xl border border-neutral-800 bg-zadel-elevated overflow-hidden">
-        <div className="p-4 border-b border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-neutral-400">
-          <span>Catalog Items ({filteredProducts.length} of {productsList.length})</span>
+        <div className="p-4 border-b border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-neutral-400">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium text-neutral-300">Catalog Items ({filteredProducts.length} of {productsList.length})</span>
+            <span className="text-neutral-600 hidden sm:inline">•</span>
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono border flex items-center gap-1 ${
+              featuredCount >= 4 ? 'bg-amber-950/60 border-amber-500/60 text-amber-300 font-semibold' : 'bg-neutral-900 border-neutral-800 text-neutral-400'
+            }`}>
+              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+              Featured: {featuredCount}/4 {featuredCount >= 4 ? '(Max)' : ''}
+            </span>
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono border flex items-center gap-1 ${
+              bestSellerCount >= 4 ? 'bg-orange-950/60 border-orange-500/60 text-orange-300 font-semibold' : 'bg-neutral-900 border-neutral-800 text-neutral-400'
+            }`}>
+              <Flame className="h-3 w-3 fill-orange-400 text-orange-400" />
+              Best Seller: {bestSellerCount}/4 {bestSellerCount >= 4 ? '(Max)' : ''}
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-mono border bg-neutral-900 border-neutral-800 text-neutral-400 flex items-center gap-1">
+              <Sparkles className="h-3 w-3 text-purple-400" />
+              New Arrivals: {newArrivalCount}
+            </span>
+          </div>
           <span className="font-mono text-neutral-500 text-[11px]">
             Real-time Firestore & Storage Gallery Sync
           </span>
@@ -580,16 +751,116 @@ export default function AdminProducts() {
                       <p className="text-xs text-neutral-400 truncate mt-0.5">
                         {product.description || 'No description provided.'}
                       </p>
-                      <div className="flex items-center gap-3 text-[11px] text-neutral-500 font-mono mt-1">
-                        <span>Gallery: {product.images?.length || 0} image(s)</span>
-                        <span>•</span>
-                        <span>Price: ${product.price.toLocaleString()}</span>
-                      </div>
+                      {(() => {
+                        const mrp = product.originalPrice || product.mrp || product.price || 0;
+                        const price = product.price || 0;
+                        const discount =
+                          product.discount ??
+                          (mrp > 0 && price <= mrp ? Math.round(((mrp - price) / mrp) * 100) : 0);
+
+                        return (
+                          <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-mono mt-1">
+                            <span className="text-neutral-400">Gallery: {product.images?.length || 0} image(s)</span>
+                            <span className="text-neutral-700">•</span>
+                            <span className="text-neutral-200 font-semibold">Store Price: ${price.toLocaleString()}</span>
+                            {mrp > price ? (
+                              <>
+                                <span className="text-neutral-500">MRP: <span className="line-through">${mrp.toLocaleString()}</span></span>
+                                <span className="bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 px-1.5 py-0.2 rounded font-bold text-[10px]">
+                                  {discount}% OFF
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-neutral-500">MRP: ${mrp.toLocaleString()}</span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
-                  {/* Right side controls */}
-                  <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-neutral-900">
+                  {/* Right side controls & Badges */}
+                  <div className="flex flex-wrap items-center justify-between md:justify-end gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-neutral-900">
+                    {/* Featured Toggle Button */}
+                    <button
+                      type="button"
+                      disabled={togglingAttributeId === `${product.id}-featured`}
+                      onClick={() => handleToggleFeatured(product)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                        product.featured
+                          ? 'bg-amber-950/60 border-amber-500/60 text-amber-300 hover:bg-amber-900/70'
+                          : featuredCount >= 4
+                          ? 'bg-neutral-900/60 border-neutral-800/80 text-neutral-500 hover:text-neutral-400'
+                          : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-amber-300 hover:border-neutral-700'
+                      }`}
+                      title={
+                        product.featured
+                          ? 'Featured (Click to unselect)'
+                          : featuredCount >= 4
+                          ? 'Maximum 4 Featured products allowed.'
+                          : 'Click to select Featured'
+                      }
+                    >
+                      {togglingAttributeId === `${product.id}-featured` ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+                      ) : (
+                        <Star className={`h-3.5 w-3.5 ${product.featured ? 'fill-amber-400 text-amber-400' : 'text-neutral-500'}`} />
+                      )}
+                      <span>Featured</span>
+                    </button>
+
+                    {/* Best Seller Toggle Button */}
+                    <button
+                      type="button"
+                      disabled={togglingAttributeId === `${product.id}-bestseller`}
+                      onClick={() => handleToggleBestSeller(product)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                        product.bestSeller
+                          ? 'bg-orange-950/60 border-orange-500/60 text-orange-300 hover:bg-orange-900/70'
+                          : bestSellerCount >= 4
+                          ? 'bg-neutral-900/60 border-neutral-800/80 text-neutral-500 hover:text-neutral-400'
+                          : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-orange-300 hover:border-neutral-700'
+                      }`}
+                      title={
+                        product.bestSeller
+                          ? 'Best Seller (Click to unselect)'
+                          : bestSellerCount >= 4
+                          ? 'Maximum 4 Best Seller products allowed.'
+                          : 'Click to select Best Seller'
+                      }
+                    >
+                      {togglingAttributeId === `${product.id}-bestseller` ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-orange-400" />
+                      ) : (
+                        <Flame className={`h-3.5 w-3.5 ${product.bestSeller ? 'fill-orange-400 text-orange-400' : 'text-neutral-500'}`} />
+                      )}
+                      <span>Best Seller</span>
+                    </button>
+
+                    {/* New Arrival Toggle Button */}
+                    <button
+                      type="button"
+                      disabled={togglingAttributeId === `${product.id}-newarrival`}
+                      onClick={() => handleToggleNewArrival(product)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                        product.newArrival
+                          ? 'bg-purple-950/60 border-purple-500/60 text-purple-300 hover:bg-purple-900/70'
+                          : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-purple-300 hover:border-neutral-700'
+                      }`}
+                      title={
+                        product.newArrival
+                          ? 'New Arrival (ON) - Click to turn OFF'
+                          : 'Click to turn ON New Arrival'
+                      }
+                    >
+                      {togglingAttributeId === `${product.id}-newarrival` ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />
+                      ) : (
+                        <Sparkles className={`h-3.5 w-3.5 ${product.newArrival ? 'fill-purple-400 text-purple-400' : 'text-neutral-500'}`} />
+                      )}
+                      <span>New Arrival</span>
+                    </button>
+
                     {/* Stock Toggle Button */}
                     <button
                       type="button"
@@ -882,35 +1153,113 @@ export default function AdminProducts() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block mb-1 font-medium text-neutral-300">
-                    Category
-                  </label>
-                  <select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-zadel-gold focus:outline-none"
-                  >
-                    <option value="Men">Men</option>
-                    <option value="Women">Women</option>
-                    <option value="Outerwear">Outerwear</option>
-                    <option value="Accessories">Accessories</option>
-                  </select>
+              <div>
+                <label className="block mb-1 font-medium text-neutral-300">
+                  Category
+                </label>
+                <select
+                  value={formCategory}
+                  onChange={(e) => setFormCategory(e.target.value)}
+                  className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-zadel-gold focus:outline-none"
+                >
+                  <option value="Men">Men</option>
+                  <option value="Women">Women</option>
+                  <option value="Outerwear">Outerwear</option>
+                  <option value="Accessories">Accessories</option>
+                </select>
+              </div>
+
+              {/* Product Pricing Structure */}
+              <div className="p-3.5 rounded-xl border border-neutral-800 bg-neutral-950/80 space-y-3">
+                <div className="flex items-center justify-between border-b border-neutral-800/80 pb-2">
+                  <span className="font-semibold text-neutral-200 text-xs flex items-center gap-1.5">
+                    <DollarSign className="h-4 w-4 text-zadel-gold" />
+                    Product Pricing Structure
+                  </span>
+                  <span className="text-[10px] text-neutral-500 font-mono">
+                    Discount % = ((MRP - Store Price) / MRP) × 100
+                  </span>
                 </div>
 
-                <div>
-                  <label className="block mb-1 font-medium text-neutral-300">
-                    Price ($)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={formPrice}
-                    onChange={(e) => setFormPrice(Number(e.target.value))}
-                    className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-zadel-gold focus:outline-none"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Actual MRP */}
+                  <div>
+                    <label className="block mb-1 font-medium text-neutral-300 text-[11px]">
+                      Actual MRP ($) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      required
+                      value={formMrp}
+                      onChange={(e) => setFormMrp(Math.max(0, Number(e.target.value) || 0))}
+                      placeholder="e.g. 5999"
+                      className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-zadel-gold focus:outline-none font-mono"
+                    />
+                  </div>
+
+                  {/* Store Selling Price */}
+                  <div>
+                    <label className="block mb-1 font-medium text-neutral-300 text-[11px]">
+                      Store Selling Price ($) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      required
+                      value={formPrice}
+                      onChange={(e) => setFormPrice(Math.max(0, Number(e.target.value) || 0))}
+                      placeholder="e.g. 4999"
+                      className={`w-full rounded-lg border bg-neutral-900 px-3 py-2 text-neutral-200 focus:outline-none font-mono ${
+                        formPrice > formMrp && formMrp > 0
+                          ? 'border-rose-500/80 focus:border-rose-500'
+                          : 'border-neutral-800 focus:border-zadel-gold'
+                      }`}
+                    />
+                  </div>
+
+                  {/* Auto-Calculated Discount % */}
+                  <div>
+                    <label className="block mb-1 font-medium text-neutral-300 text-[11px]">
+                      Discount %
+                    </label>
+                    <div className="w-full rounded-lg border border-emerald-900/60 bg-emerald-950/40 px-3 py-2 flex items-center justify-between font-mono text-emerald-300">
+                      <span className="font-bold text-sm">
+                        {formMrp > 0 && formPrice <= formMrp
+                          ? `${Math.round(((formMrp - formPrice) / formMrp) * 100)}%`
+                          : '0%'}
+                      </span>
+                      <span className="text-[10px] text-emerald-400 bg-emerald-900/60 border border-emerald-700/60 px-1.5 py-0.5 rounded uppercase tracking-wider font-sans font-semibold">
+                        Auto
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Formula Breakdown & Summary */}
+                <div className="text-[11px] text-neutral-400 bg-neutral-900/90 border border-neutral-800/80 rounded-lg p-2.5 flex items-center justify-between">
+                  <div className="space-y-0.5 w-full">
+                    <div className="flex items-center gap-2">
+                      <span>MRP: <strong className="text-neutral-200">${formMrp.toLocaleString()}</strong></span>
+                      <span>→</span>
+                      <span>Store Price: <strong className="text-zadel-gold">${formPrice.toLocaleString()}</strong></span>
+                    </div>
+                    {formMrp > 0 && formPrice < formMrp ? (
+                      <p className="text-emerald-400 text-[10px]">
+                        Customer saves ${(formMrp - formPrice).toLocaleString()} ({Math.round(((formMrp - formPrice) / formMrp) * 100)}% discount applied)
+                      </p>
+                    ) : formMrp > 0 && formPrice > formMrp ? (
+                      <p className="text-rose-400 text-[10px] font-semibold">
+                        ❌ Store Selling Price cannot exceed Actual MRP (${formMrp.toLocaleString()}).
+                      </p>
+                    ) : (
+                      <p className="text-neutral-500 text-[10px]">
+                        No discount applied (Selling price equals MRP).
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1022,15 +1371,151 @@ export default function AdminProducts() {
                 )}
               </div>
 
+              {/* Product Badges & Flags */}
+              <div className="space-y-2 pt-2 border-t border-neutral-800">
+                <label className="block font-medium text-neutral-300 text-xs">
+                  Product Flags & Highlights
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* Featured */}
+                  <div
+                    className={`p-3 rounded-xl border transition-colors ${
+                      formFeatured
+                        ? 'bg-amber-950/30 border-amber-500/50 text-amber-200'
+                        : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="formFeaturedCheck"
+                        className="flex items-center gap-1.5 cursor-pointer font-medium text-xs"
+                      >
+                        <Star
+                          className={`h-4 w-4 ${
+                            formFeatured ? 'text-amber-400 fill-amber-400' : 'text-neutral-500'
+                          }`}
+                        />
+                        <span>Featured</span>
+                      </label>
+                      <input
+                        type="checkbox"
+                        id="formFeaturedCheck"
+                        checked={formFeatured}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          if (checked) {
+                            const otherFeatured = productsList.filter(
+                              (p) => p.featured && p.id !== editingProduct?.id
+                            ).length;
+                            if (otherFeatured >= 4) {
+                              addToast('error', 'Maximum 4 Featured products allowed.');
+                              setFormError('Maximum 4 Featured products allowed.');
+                              return;
+                            }
+                          }
+                          setFormError(null);
+                          setFormFeatured(checked);
+                        }}
+                        className="h-4 w-4 rounded border-neutral-800 text-amber-500 focus:ring-amber-500 bg-neutral-950 cursor-pointer"
+                      />
+                    </div>
+                    <p className="text-[10px] text-neutral-500 mt-1">
+                      Max 4 allowed ({productsList.filter((p) => p.featured && p.id !== editingProduct?.id).length}/4 active)
+                    </p>
+                  </div>
+
+                  {/* Best Seller */}
+                  <div
+                    className={`p-3 rounded-xl border transition-colors ${
+                      formBestSeller
+                        ? 'bg-orange-950/30 border-orange-500/50 text-orange-200'
+                        : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="formBestSellerCheck"
+                        className="flex items-center gap-1.5 cursor-pointer font-medium text-xs"
+                      >
+                        <Flame
+                          className={`h-4 w-4 ${
+                            formBestSeller ? 'text-orange-400 fill-orange-400' : 'text-neutral-500'
+                          }`}
+                        />
+                        <span>Best Seller</span>
+                      </label>
+                      <input
+                        type="checkbox"
+                        id="formBestSellerCheck"
+                        checked={formBestSeller}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          if (checked) {
+                            const otherBestSeller = productsList.filter(
+                              (p) => p.bestSeller && p.id !== editingProduct?.id
+                            ).length;
+                            if (otherBestSeller >= 4) {
+                              addToast('error', 'Maximum 4 Best Seller products allowed.');
+                              setFormError('Maximum 4 Best Seller products allowed.');
+                              return;
+                            }
+                          }
+                          setFormError(null);
+                          setFormBestSeller(checked);
+                        }}
+                        className="h-4 w-4 rounded border-neutral-800 text-orange-500 focus:ring-orange-500 bg-neutral-950 cursor-pointer"
+                      />
+                    </div>
+                    <p className="text-[10px] text-neutral-500 mt-1">
+                      Max 4 allowed ({productsList.filter((p) => p.bestSeller && p.id !== editingProduct?.id).length}/4 active)
+                    </p>
+                  </div>
+
+                  {/* New Arrival */}
+                  <div
+                    className={`p-3 rounded-xl border transition-colors ${
+                      formNewArrival
+                        ? 'bg-purple-950/30 border-purple-500/50 text-purple-200'
+                        : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="formNewArrivalCheck"
+                        className="flex items-center gap-1.5 cursor-pointer font-medium text-xs"
+                      >
+                        <Sparkles
+                          className={`h-4 w-4 ${
+                            formNewArrival ? 'text-purple-400 fill-purple-400' : 'text-neutral-500'
+                          }`}
+                        />
+                        <span>New Arrival</span>
+                      </label>
+                      <input
+                        type="checkbox"
+                        id="formNewArrivalCheck"
+                        checked={formNewArrival}
+                        onChange={(e) => setFormNewArrival(e.target.checked)}
+                        className="h-4 w-4 rounded border-neutral-800 text-purple-500 focus:ring-purple-500 bg-neutral-950 cursor-pointer"
+                      />
+                    </div>
+                    <p className="text-[10px] text-neutral-500 mt-1">
+                      ON/OFF toggle (No limit)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
                   id="inStockCheck"
                   checked={formInStock}
                   onChange={(e) => setFormInStock(e.target.checked)}
-                  className="h-4 w-4 rounded border-neutral-800 text-zadel-gold focus:ring-zadel-gold bg-neutral-950"
+                  className="h-4 w-4 rounded border-neutral-800 text-zadel-gold focus:ring-zadel-gold bg-neutral-950 cursor-pointer"
                 />
-                <label htmlFor="inStockCheck" className="text-neutral-300 font-medium cursor-pointer">
+                <label htmlFor="inStockCheck" className="text-neutral-300 font-medium cursor-pointer text-xs">
                   Available in Stock
                 </label>
               </div>

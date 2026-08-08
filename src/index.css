@@ -34,19 +34,19 @@
   --theme-select-fg: #ffffff;
 }
 
-/* Light — warm off-white luxury */
+/* Light — clean warm luxury alabaster */
 [data-theme="light"] {
-  --theme-bg: #f6f2eb;
-  --theme-elevated: #fffcf7;
-  --theme-surface: #ebe4d8;
-  --theme-fg: #1a1814;
-  --theme-solid: #1a1814;
-  --theme-on-solid: #f6f2eb;
-  --theme-scrollbar-track: #efe8dc;
-  --theme-scrollbar-thumb: #cfc4b2;
-  --theme-range-track: #d4cbbd;
-  --theme-select-bg: #fffcf7;
-  --theme-select-fg: #1a1814;
+  --theme-bg: #faf7f2;
+  --theme-elevated: #ffffff;
+  --theme-surface: #f3ede2;
+  --theme-fg: #141210;
+  --theme-solid: #141210;
+  --theme-on-solid: #ffffff;
+  --theme-scrollbar-track: #f3ede2;
+  --theme-scrollbar-thumb: #d8cebc;
+  --theme-range-track: #d8cebc;
+  --theme-select-bg: #ffffff;
+  --theme-select-fg: #141210;
 }
 
 @layer base {
@@ -419,4 +419,274 @@ select {
     background-color 300ms var(--ease-luxury),
     color 300ms var(--ease-luxury),
     box-shadow 250ms var(--ease-luxury);
+}
+
+/* ==========================================
+   LIGHT MODE OPTIMIZATIONS (LIGHT MODE ONLY)
+   ========================================== */
+[data-theme="light"] {
+  /* Default body & typography */
+  color: #141210;
+
+  /* Inputs, Textareas, Selects */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    background-color: #ffffff !important;
+    color: #141210 !important;
+    border-color: #dad2c5 !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #857d72 !important;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: #c4a574 !important;
+    box-shadow: 0 0 0 3px rgba(196, 165, 116, 0.22) !important;
+  }
+
+  /* Utility background overrides */
+  .bg-neutral-950,
+  .bg-neutral-900,
+  .bg-neutral-900\/90,
+  .bg-neutral-900\/80,
+  .bg-neutral-900\/70,
+  .bg-neutral-900\/60,
+  .bg-neutral-900\/50,
+  .bg-neutral-900\/40,
+  .bg-neutral-900\/30,
+  .bg-neutral-900\/20,
+  .bg-zadel-black\/95,
+  .bg-zadel-black\/90,
+  .bg-zadel-black\/80,
+  .bg-zadel-black\/70,
+  .bg-zadel-black\/60,
+  .bg-zadel-black\/50,
+  .bg-zadel-black\/40 {
+    background-color: #ffffff !important;
+  }
+
+  .bg-neutral-800,
+  .bg-neutral-800\/80,
+  .bg-neutral-800\/50,
+  .bg-neutral-800\/30,
+  .bg-zadel-surface\/30,
+  .bg-zadel-surface\/40,
+  .bg-zadel-surface\/20 {
+    background-color: #f3ede2 !important;
+  }
+
+  /* Utility border overrides */
+  .border-neutral-800,
+  .border-neutral-900,
+  .border-neutral-700,
+  .border-neutral-800\/80,
+  .border-neutral-800\/50,
+  .border-neutral-800\/30,
+  .border-foreground\/5,
+  .border-foreground\/8,
+  .border-foreground\/10,
+  .border-foreground\/15,
+  .divide-neutral-800 > :not([hidden]) ~ :not([hidden]),
+  .divide-foreground\/5 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #e0d7c8 !important;
+  }
+
+  /* Text color contrast enhancements */
+  .text-white,
+  .text-neutral-100,
+  .text-neutral-200 {
+    color: #141210 !important;
+  }
+
+  .text-neutral-300,
+  .text-neutral-400 {
+    color: #3b3732 !important;
+  }
+
+  .text-neutral-500 {
+    color: #635c53 !important;
+  }
+
+  .text-neutral-600 {
+    color: #7a7267 !important;
+  }
+
+  /* Preserve white text on dark hero overlay banner & dark badge/pill overlays */
+  .hero-overlay *,
+  .hero-overlay h1,
+  .hero-overlay p,
+  .hero-overlay span {
+    color: #ffffff !important;
+  }
+
+  .bg-black\/80.text-zadel-gold,
+  .bg-black\/60.text-white,
+  .wishlist-float.is-idle {
+    background-color: rgba(20, 18, 16, 0.75) !important;
+    color: #ffffff !important;
+  }
+
+  /* Hover state refinements */
+  .hover\:bg-neutral-900:hover,
+  .hover\:bg-neutral-800:hover,
+  .hover\:bg-neutral-700:hover,
+  .hover\:bg-foreground\/5:hover,
+  .hover\:bg-foreground\/10:hover {
+    background-color: #ebe4d5 !important;
+  }
+
+  .hover\:text-foreground:hover {
+    color: #141210 !important;
+  }
+
+  /* Drawer & Modal Overlays */
+  .bg-black\/80,
+  .bg-black\/70,
+  .bg-black\/60,
+  .bg-black\/50 {
+    background-color: rgba(20, 18, 16, 0.45) !important;
+  }
+
+  /* Product Card Media Surface */
+  .product-card-media {
+    background-color: #f3ede2 !important;
+    border-color: #e0d7c8 !important;
+  }
+
+  .group:hover .product-card-media {
+    border-color: #c4a574 !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* Tables in Light Mode */
+  table th {
+    background-color: #ede6d6 !important;
+    color: #141210 !important;
+    border-color: #e0d7c8 !important;
+    font-weight: 600 !important;
+  }
+
+  table td {
+    border-color: #e5decb !important;
+    color: #141210 !important;
+  }
+
+  table tr:hover td {
+    background-color: #f5eee0 !important;
+  }
+
+  /* Admin Badges & Status Panels */
+  .bg-red-950\/80,
+  .bg-red-950\/60,
+  .bg-red-950\/40,
+  .bg-red-950\/30,
+  .bg-red-900\/60,
+  .bg-red-900\/40,
+  .bg-red-500\/10 {
+    background-color: #fef2f2 !important;
+  }
+  .border-red-900\/60,
+  .border-red-900\/50,
+  .border-red-900\/30,
+  .border-red-700\/60 {
+    border-color: #fecaca !important;
+  }
+  .text-red-300,
+  .text-red-400 {
+    color: #991b1b !important;
+  }
+
+  .bg-emerald-950\/80,
+  .bg-emerald-950\/60,
+  .bg-emerald-950\/40,
+  .bg-emerald-900\/60,
+  .bg-emerald-900\/40,
+  .bg-emerald-800\/60,
+  .bg-emerald-500\/10 {
+    background-color: #ecfdf5 !important;
+  }
+  .border-emerald-800\/50,
+  .border-emerald-700\/60,
+  .border-emerald-700\/50,
+  .border-emerald-500\/50 {
+    border-color: #a7f3d0 !important;
+  }
+  .text-emerald-400,
+  .text-emerald-300 {
+    color: #046c4e !important;
+  }
+
+  .bg-amber-950\/80,
+  .bg-amber-950\/60,
+  .bg-amber-900\/60,
+  .bg-amber-500\/10 {
+    background-color: #fffbeb !important;
+  }
+  .border-amber-700\/60,
+  .border-amber-500\/50 {
+    border-color: #fde68a !important;
+  }
+  .text-amber-400,
+  .text-amber-300 {
+    color: #92400e !important;
+  }
+
+  .bg-blue-950\/80,
+  .bg-blue-950\/60,
+  .bg-blue-900\/60,
+  .bg-blue-500\/10 {
+    background-color: #eff6ff !important;
+  }
+  .text-blue-400,
+  .text-blue-300 {
+    color: #1e40af !important;
+  }
+
+  /* Gold text enhancement for light mode contrast */
+  .text-zadel-gold {
+    color: #9c7b48 !important;
+  }
+
+  /* Faint text contrast boost in light mode */
+  .text-foreground\/30,
+  .text-foreground\/35,
+  .text-foreground\/40 {
+    color: #635c53 !important;
+  }
+
+  .text-foreground\/50,
+  .text-foreground\/60 {
+    color: #4a453f !important;
+  }
+
+  /* Buttons with gold background have crisp dark text */
+  .bg-zadel-gold {
+    color: #141210 !important;
+  }
+
+  /* Footer styling in Light Mode */
+  footer {
+    background-color: #ede7da !important;
+    border-color: #e0d7c8 !important;
+  }
+
+  footer h4 {
+    color: #9c7b48 !important;
+  }
+
+  footer a,
+  footer span,
+  footer p,
+  footer li {
+    color: #38342e !important;
+  }
+
+  footer a:hover {
+    color: #141210 !important;
+  }
 }

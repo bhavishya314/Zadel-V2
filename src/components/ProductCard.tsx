@@ -56,7 +56,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-2 p-3 opacity-0 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 group-hover:opacity-100 max-md:hidden">
           <Link
             to={`/product/${product.id}`}
-            className="btn-luxury pointer-events-auto flex w-full items-center justify-center rounded-lg bg-zadel-solid/95 py-2.5 text-[11px] font-medium tracking-[0.18em] text-zadel-ink uppercase backdrop-blur-sm hover:bg-zadel-gold"
+            className="btn-luxury pointer-events-auto flex w-full items-center justify-center rounded-lg bg-zadel-solid/95 py-2.5 text-[11px] font-medium tracking-[0.18em] text-zadel-on-solid uppercase backdrop-blur-sm hover:bg-zadel-gold hover:text-zadel-ink"
           >
             View
           </Link>

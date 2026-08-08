@@ -324,7 +324,7 @@ export default function ProductPage() {
               <button
                 type="button"
                 onClick={handleAdd}
-                className="btn-luxury inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-zadel-solid py-3.5 text-[11px] font-semibold tracking-[0.2em] text-zadel-ink uppercase hover:bg-zadel-gold"
+                className="btn-luxury inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-zadel-solid py-3.5 text-[11px] font-semibold tracking-[0.2em] text-zadel-on-solid uppercase hover:bg-zadel-gold hover:text-zadel-ink"
               >
                 <ShoppingBag size={16} strokeWidth={1.75} />
                 Add to Cart
