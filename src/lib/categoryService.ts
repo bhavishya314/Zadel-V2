@@ -13,7 +13,7 @@ import { db, handleFirestoreError, OperationType } from './firebase';
 import type { FirestoreCategory } from './types';
 
 const CATEGORIES_COLLECTION = 'categories';
-const SEED_META_DOC = doc(db, 'system', 'category_seed_meta');
+const getSeedMetaDoc = () => doc(db, 'system', 'category_seed_meta');
 
 /**
  * Default categories seed
@@ -70,8 +70,14 @@ export async function seedInitialCategoriesIfEmpty(): Promise<void> {
     const colRef = collection(db, CATEGORIES_COLLECTION);
     const snap = await getDocs(colRef);
     if (snap.empty) {
-      const seedMetaSnap = await getDoc(SEED_META_DOC);
-      if (seedMetaSnap.exists()) {
+      let seedMetaSnap = null;
+      try {
+        seedMetaSnap = await getDoc(getSeedMetaDoc());
+      } catch {
+        // Ignored if permissions vary
+      }
+
+      if (seedMetaSnap && seedMetaSnap.exists()) {
         // Categories were already seeded previously; empty means all categories were deleted by admin
         return;
       }
@@ -85,7 +91,11 @@ export async function seedInitialCategoriesIfEmpty(): Promise<void> {
           updatedAt: now,
         });
       }
-      await setDoc(SEED_META_DOC, { seeded: true, seededAt: now });
+      try {
+        await setDoc(getSeedMetaDoc(), { seeded: true, seededAt: now });
+      } catch {
+        // Ignored
+      }
     }
   } catch (err) {
     console.error('Error seeding initial categories:', err);
@@ -192,10 +202,10 @@ export function subscribeToCategories(
 
   return onSnapshot(
     colRef,
-    async (snapshot) => {
+    (snapshot) => {
       if (snapshot.empty && !isSeeding) {
         isSeeding = true;
-        await seedInitialCategoriesIfEmpty();
+        seedInitialCategoriesIfEmpty().catch(() => {});
         callback([]);
         return;
       }
@@ -220,6 +230,7 @@ export function subscribeToCategories(
     (error) => {
       console.error('Error listening to categories:', error);
       handleFirestoreError(error, OperationType.GET, CATEGORIES_COLLECTION);
+      callback([]);
     }
   );
 }

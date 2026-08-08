@@ -7,10 +7,9 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && request.auth.uid == adminId;
     }
 
-    match /system/admin_config {
+    match /system/{document=**} {
       allow read: if true;
-      allow create: if !exists(/databases/$(database)/documents/system/admin_config);
-      allow update, delete: if request.auth != null;
+      allow write: if request.auth != null;
     }
 
     match /products/{productId} {
