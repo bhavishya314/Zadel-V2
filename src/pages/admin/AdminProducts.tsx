@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import {
   subscribeToProducts,
+  subscribeToCategories,
   updateProduct,
   addProduct,
   deleteProduct,
@@ -41,7 +42,15 @@ import AdminToast, { ToastMessage } from '../../components/AdminToast';
 
 export default function AdminProducts() {
   const [productsList, setProductsList] = useState<FirestoreProduct[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubCats = subscribeToCategories((cats) => {
+      setAvailableCategories(cats.map((c) => c.name));
+    });
+    return () => unsubCats();
+  }, []);
 
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -629,10 +638,11 @@ export default function AdminProducts() {
             className="rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs text-neutral-200 focus:border-zadel-gold focus:outline-none cursor-pointer"
           >
             <option value="All">All Categories</option>
-            <option value="Men">Men</option>
-            <option value="Women">Women</option>
-            <option value="Outerwear">Outerwear</option>
-            <option value="Accessories">Accessories</option>
+            {availableCategories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -1162,10 +1172,11 @@ export default function AdminProducts() {
                   onChange={(e) => setFormCategory(e.target.value)}
                   className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 focus:border-zadel-gold focus:outline-none"
                 >
-                  <option value="Men">Men</option>
-                  <option value="Women">Women</option>
-                  <option value="Outerwear">Outerwear</option>
-                  <option value="Accessories">Accessories</option>
+                  {availableCategories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
 

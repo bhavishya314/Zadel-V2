@@ -8,12 +8,20 @@ import {
   hasValue,
   type ContactInformation,
 } from '../lib/contactSettings';
-import { subscribeToContact } from '../lib/firebase';
+import { subscribeToContact, subscribeToCategories } from '../lib/firebase';
 
 export default function Footer() {
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const [settings, setSettings] = useState<ContactInformation>(() =>
     getContactSettings()
   );
+
+  useEffect(() => {
+    const unsubCats = subscribeToCategories((cats) => {
+      setCategoriesList(cats.map((c) => c.name));
+    });
+    return () => unsubCats();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeToContact((firestoreContact) => {
@@ -81,7 +89,7 @@ export default function Footer() {
               Collections
             </h4>
             <ul className="space-y-3">
-              {['Men', 'Women', 'Outerwear', 'Accessories'].map((c) => (
+              {categoriesList.map((c) => (
                 <li key={c}>
                   <Link
                     to={`/shop?category=${encodeURIComponent(c)}`}

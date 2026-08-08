@@ -183,28 +183,7 @@ export const products: Product[] = [
   },
 ];
 
-export const categories = [
-  {
-    name: 'Men' as const,
-    image: '/images/placeholder-category.svg',
-    description: 'Tailored essentials',
-  },
-  {
-    name: 'Women' as const,
-    image: '/images/placeholder-category.svg',
-    description: 'Refined silhouettes',
-  },
-  {
-    name: 'Outerwear' as const,
-    image: '/images/placeholder-category.svg',
-    description: 'Seasonal layers',
-  },
-  {
-    name: 'Accessories' as const,
-    image: '/images/placeholder-category.svg',
-    description: 'Finishing pieces',
-  },
-];
+export const categories: Array<{ name: string; image: string; description: string }> = [];
 
 export function formatINR(amount: number): string {
   return new Intl.NumberFormat('en-IN', {

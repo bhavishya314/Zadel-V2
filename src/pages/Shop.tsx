@@ -11,19 +11,28 @@ import {
   getPublishedProducts,
   type ShopSortKey,
 } from '../lib/productCatalog';
-import { subscribeToProducts } from '../lib/firebase';
+import { subscribeToProducts, subscribeToCategories } from '../lib/firebase';
 import type { Category, Product } from '../lib/types';
-
-const ALL_CATEGORIES: Array<Category | 'All'> = [
-  'All',
-  'Men',
-  'Women',
-  'Outerwear',
-  'Accessories',
-];
 
 export default function Shop() {
   const [params, setParams] = useSearchParams();
+
+  const [availableCategories, setAvailableCategories] = useState<string[]>(['All']);
+
+  /** Subscribe to real-time Firestore categories */
+  useEffect(() => {
+    const unsubscribe = subscribeToCategories((cats) => {
+      if (cats && cats.length > 0) {
+        setAvailableCategories(['All', ...cats.map((c) => c.name)]);
+      } else {
+        setAvailableCategories(['All']);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const category = (params.get('category') as Category | 'All') || 'All';
   const q = params.get('q') || '';
@@ -276,7 +285,7 @@ export default function Shop() {
               ref={categoryScrollerRef}
               className="category-carousel flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain scroll-smooth lg:snap-none lg:overflow-x-hidden lg:px-5"
             >
-              {ALL_CATEGORIES.map((c) => {
+              {availableCategories.map((c) => {
                 const active = (c === 'All' && (!category || category === 'All')) || category === c;
                 return (
                   <button

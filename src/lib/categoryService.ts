@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   addDoc,
   setDoc,
@@ -12,6 +13,7 @@ import { db, handleFirestoreError, OperationType } from './firebase';
 import type { FirestoreCategory } from './types';
 
 const CATEGORIES_COLLECTION = 'categories';
+const SEED_META_DOC = doc(db, 'system', 'category_seed_meta');
 
 /**
  * Default categories seed
@@ -61,13 +63,19 @@ export function slugify(text: string): string {
 }
 
 /**
- * Seed initial categories if collection is empty
+ * Seed initial categories if collection is empty AND never seeded before
  */
 export async function seedInitialCategoriesIfEmpty(): Promise<void> {
   try {
     const colRef = collection(db, CATEGORIES_COLLECTION);
     const snap = await getDocs(colRef);
     if (snap.empty) {
+      const seedMetaSnap = await getDoc(SEED_META_DOC);
+      if (seedMetaSnap.exists()) {
+        // Categories were already seeded previously; empty means all categories were deleted by admin
+        return;
+      }
+
       const now = new Date().toISOString();
       for (const cat of DEFAULT_CATEGORIES) {
         const docRef = doc(db, CATEGORIES_COLLECTION, cat.slug);
@@ -77,6 +85,7 @@ export async function seedInitialCategoriesIfEmpty(): Promise<void> {
           updatedAt: now,
         });
       }
+      await setDoc(SEED_META_DOC, { seeded: true, seededAt: now });
     }
   } catch (err) {
     console.error('Error seeding initial categories:', err);
@@ -187,6 +196,7 @@ export function subscribeToCategories(
       if (snapshot.empty && !isSeeding) {
         isSeeding = true;
         await seedInitialCategoriesIfEmpty();
+        callback([]);
         return;
       }
 

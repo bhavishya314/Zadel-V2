@@ -2,14 +2,23 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { categories } from '../lib/products';
+import { subscribeToCategories } from '../lib/firebase';
+import type { FirestoreCategory } from '../lib/types';
 import { luxuryEase } from '../lib/motion';
 import FadeImage from './FadeImage';
 
 export default function CategoryCarousel() {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const [categoriesList, setCategoriesList] = useState<FirestoreCategory[]>([]);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToCategories((cats) => {
+      setCategoriesList(cats);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const updateArrows = useCallback(() => {
     const el = scrollerRef.current;
@@ -39,7 +48,7 @@ export default function CategoryCarousel() {
       ro.disconnect();
       window.removeEventListener('resize', updateArrows);
     };
-  }, [updateArrows]);
+  }, [updateArrows, categoriesList]);
 
   const scrollByCard = (direction: -1 | 1) => {
     const el = scrollerRef.current;
@@ -88,9 +97,9 @@ export default function CategoryCarousel() {
         ref={scrollerRef}
         className="category-carousel flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth pb-1 md:gap-5 lg:snap-none lg:overflow-x-hidden"
       >
-        {categories.map((cat, i) => (
+        {categoriesList.map((cat, i) => (
           <motion.div
-            key={cat.name}
+            key={cat.id || cat.slug || cat.name}
             data-category-card
             initial={{ opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -105,7 +114,7 @@ export default function CategoryCarousel() {
               onDragStart={(e) => e.preventDefault()}
             >
               <FadeImage
-                src={cat.image}
+                src={cat.image || '/images/placeholder-category.svg'}
                 alt={cat.name}
                 loading="lazy"
                 draggable={false}
