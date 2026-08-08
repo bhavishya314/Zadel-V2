@@ -73,6 +73,9 @@ export default function AdminProducts() {
   const [formPrice, setFormPrice] = useState<number>(0);
   const [formDescription, setFormDescription] = useState('');
   const [formInStock, setFormInStock] = useState(true);
+  const [formImages, setFormImages] = useState<string[]>([]);
+  const [uploadingFormImages, setUploadingFormImages] = useState(false);
+  const [formImageProgressMsg, setFormImageProgressMsg] = useState<string | null>(null);
   const [savingProduct, setSavingProduct] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -87,6 +90,7 @@ export default function AdminProducts() {
   // File input refs
   const multipleFileInputRef = useRef<HTMLInputElement>(null);
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
+  const formFileInputRef = useRef<HTMLInputElement>(null);
   const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -259,6 +263,48 @@ export default function AdminProducts() {
     }
   };
 
+  // Form Image Upload Handlers
+  const handleFormFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingFormImages(true);
+    const uploadedUrls: string[] = [];
+    const total = files.length;
+
+    try {
+      for (let i = 0; i < total; i++) {
+        const file = files[i];
+        setFormImageProgressMsg(`Uploading image ${i + 1} of ${total} to Cloudinary...`);
+        const url = await uploadProductImageToStorage(file, editingProduct ? editingProduct.id : 'new-product');
+        uploadedUrls.push(url);
+      }
+      setFormImages((prev) => [...prev, ...uploadedUrls]);
+      addToast('success', `Uploaded ${total} image(s) to Cloudinary.`);
+    } catch (err) {
+      console.error('Error uploading form image(s):', err);
+      addToast('error', 'Failed to upload image(s) to Cloudinary.');
+    } finally {
+      setUploadingFormImages(false);
+      setFormImageProgressMsg(null);
+      if (formFileInputRef.current) {
+        formFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveFormImage = (index: number) => {
+    setFormImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleMoveFormImage = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= formImages.length) return;
+    const updated = [...formImages];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+    setFormImages(updated);
+  };
+
   // Product Add / Edit Modal Controls
   const openAddProductModal = () => {
     setEditingProduct(null);
@@ -267,6 +313,7 @@ export default function AdminProducts() {
     setFormPrice(4999);
     setFormDescription('');
     setFormInStock(true);
+    setFormImages([]);
     setFormError(null);
     setIsProductModalOpen(true);
   };
@@ -278,6 +325,7 @@ export default function AdminProducts() {
     setFormPrice(prod.price || 0);
     setFormDescription(prod.description || '');
     setFormInStock(prod.inStock ?? true);
+    setFormImages(prod.images || []);
     setFormError(null);
     setIsProductModalOpen(true);
   };
@@ -292,6 +340,8 @@ export default function AdminProducts() {
     setSavingProduct(true);
     setFormError(null);
 
+    const finalImages = formImages.length > 0 ? formImages : ['/images/placeholder.svg'];
+
     try {
       if (editingProduct) {
         await updateProduct(editingProduct.id, {
@@ -300,6 +350,7 @@ export default function AdminProducts() {
           category: formCategory,
           price: formPrice,
           description: formDescription.trim(),
+          images: finalImages,
           inStock: formInStock,
           stock: formInStock ? 10 : 0,
         });
@@ -312,7 +363,7 @@ export default function AdminProducts() {
           category: formCategory,
           price: formPrice,
           description: formDescription.trim(),
-          images: ['/images/placeholder.svg'],
+          images: finalImages,
           inStock: formInStock,
           stock: formInStock ? 10 : 0,
           published: true,
@@ -794,7 +845,7 @@ export default function AdminProducts() {
       {/* Add / Edit Product Modal */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900 p-6 space-y-5 shadow-2xl">
+          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border border-neutral-800 bg-neutral-900 p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <h3 className="font-display text-lg text-foreground">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
@@ -876,6 +927,101 @@ export default function AdminProducts() {
                 />
               </div>
 
+              {/* Image Upload Area for Add/Edit Product */}
+              <div>
+                <label className="block mb-1.5 font-medium text-neutral-300">
+                  Product Images (Cloudinary Upload)
+                </label>
+                <div className="rounded-xl border border-dashed border-neutral-700 bg-neutral-950/60 p-4 text-center space-y-2">
+                  <input
+                    type="file"
+                    multiple
+                    ref={formFileInputRef}
+                    accept="image/*"
+                    onChange={handleFormFileUpload}
+                    disabled={uploadingFormImages || savingProduct}
+                    className="hidden"
+                    id="form-product-image-input"
+                  />
+                  <label
+                    htmlFor="form-product-image-input"
+                    className={`inline-flex items-center gap-2 bg-zadel-gold text-black font-medium text-xs px-3.5 py-2 rounded-xl cursor-pointer hover:bg-amber-400 transition-colors ${
+                      uploadingFormImages || savingProduct ? 'opacity-50 pointer-events-none' : ''
+                    }`}
+                  >
+                    {uploadingFormImages ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    <span>{uploadingFormImages ? 'Uploading to Cloudinary...' : 'Upload Images from Device'}</span>
+                  </label>
+                  <p className="text-[11px] text-neutral-500">
+                    Select multiple images (.png, .jpg, .webp). First image is primary thumbnail.
+                  </p>
+                  {formImageProgressMsg && (
+                    <p className="text-[11px] text-zadel-gold animate-pulse">{formImageProgressMsg}</p>
+                  )}
+                </div>
+
+                {/* Uploaded Images Preview List */}
+                {formImages.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-neutral-400 font-medium">
+                      <span>Gallery Preview ({formImages.length})</span>
+                      <span className="text-[10px] text-neutral-500">#1 is Primary</span>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {formImages.map((url, idx) => (
+                        <div
+                          key={`${url}-${idx}`}
+                          className="relative aspect-square rounded-lg bg-neutral-950 border border-neutral-800 overflow-hidden group"
+                        >
+                          <img
+                            src={url}
+                            alt={`Product image ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute top-1 left-1 bg-black/80 text-zadel-gold text-[9px] font-mono px-1.5 py-0.5 rounded border border-neutral-700">
+                            #{idx + 1} {idx === 0 ? 'Primary' : ''}
+                          </span>
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                            {idx > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleMoveFormImage(idx, idx - 1)}
+                                className="p-1 bg-neutral-800 text-neutral-200 rounded hover:bg-neutral-700"
+                                title="Move left"
+                              >
+                                <ArrowLeft className="h-3 w-3" />
+                              </button>
+                            )}
+                            {idx < formImages.length - 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleMoveFormImage(idx, idx + 1)}
+                                className="p-1 bg-neutral-800 text-neutral-200 rounded hover:bg-neutral-700"
+                                title="Move right"
+                              >
+                                <ArrowRight className="h-3 w-3" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFormImage(idx)}
+                              className="p-1 bg-red-950/80 text-red-300 rounded hover:bg-red-900 border border-red-800"
+                              title="Remove image"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <input
                   type="checkbox"
@@ -893,14 +1039,14 @@ export default function AdminProducts() {
                 <button
                   type="button"
                   onClick={() => setIsProductModalOpen(false)}
-                  disabled={savingProduct}
+                  disabled={savingProduct || uploadingFormImages}
                   className="px-4 py-2 rounded-xl border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={savingProduct}
+                  disabled={savingProduct || uploadingFormImages}
                   className="flex items-center gap-2 bg-zadel-gold text-black font-medium px-5 py-2 rounded-xl hover:bg-amber-400 transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {savingProduct && <Loader2 className="h-3.5 w-3.5 animate-spin" />}

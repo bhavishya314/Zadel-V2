@@ -78,6 +78,13 @@ export async function uploadBrandLogoToCloudinary(file: File): Promise<string> {
 }
 
 /**
+ * Upload category image to Cloudinary
+ */
+export async function uploadCategoryImageToCloudinary(file: File): Promise<string> {
+  return uploadToCloudinary(file, 'categories');
+}
+
+/**
  * Upload hero banner image to Cloudinary
  */
 export async function uploadHeroImageToCloudinary(file: File): Promise<string> {
