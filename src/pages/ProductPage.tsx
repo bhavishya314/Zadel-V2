@@ -15,6 +15,7 @@ import { useStore } from '../context/StoreContext';
 import { luxuryEase } from '../lib/motion';
 import { orderProductOnWhatsApp } from '../lib/whatsappOrder';
 import type { Category, Product } from '../lib/types';
+import { getOptimizedImageUrl } from '../lib/cloudinary';
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -192,8 +193,9 @@ export default function ProductPage() {
                     className="h-full w-full"
                   >
                     <FadeImage
-                      src={images[activeImage]}
+                      src={getOptimizedImageUrl(images[activeImage], { width: 1000 })}
                       alt={product.name}
+                      priority={true}
                       className="h-full w-full object-cover"
                     />
                   </motion.div>
@@ -213,7 +215,12 @@ export default function ProductPage() {
                   }`}
                 >
                   <div className="aspect-[3/4]">
-                    <img src={src} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={getOptimizedImageUrl(src, { width: 300 })}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                 </button>
               ))}

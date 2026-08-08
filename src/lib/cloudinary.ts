@@ -105,3 +105,37 @@ export const uploadHeroImageToStorage = uploadHeroImageToCloudinary;
 export const deleteProductImageFromStorage = deleteImageFromCloudinary;
 export const deleteBrandLogoFromStorage = deleteImageFromCloudinary;
 export const deleteHeroImageFromStorage = deleteImageFromCloudinary;
+
+/**
+ * Transforms Cloudinary image URLs to use automatic format (f_auto), automatic quality (q_auto),
+ * and an optional max width constraint for massive performance gains.
+ */
+export function getOptimizedImageUrl(
+  url?: string,
+  options: { width?: number; quality?: number; crop?: string } = {}
+): string {
+  if (!url || typeof url !== 'string') return '';
+
+  // Non-Cloudinary URLs or local SVGs/placeholders returned as is
+  if (!url.includes('cloudinary.com') && !url.includes('res.cloudinary.com')) {
+    return url;
+  }
+
+  const uploadIndex = url.indexOf('/upload/');
+  if (uploadIndex === -1) return url;
+
+  const prefix = url.substring(0, uploadIndex + 8);
+  const suffix = url.substring(uploadIndex + 8);
+
+  // If transformations like f_auto or q_auto already present, return unchanged
+  if (suffix.startsWith('f_auto') || suffix.startsWith('q_auto')) {
+    return url;
+  }
+
+  const quality = options.quality ? `q_${options.quality}` : 'q_auto';
+  const width = options.width ? `,w_${options.width}` : '';
+  const crop = options.crop ? `,c_${options.crop}` : '';
+
+  return `${prefix}f_auto,${quality}${width}${crop}/${suffix}`;
+}
+

@@ -6,6 +6,7 @@ import { subscribeToCategories } from '../lib/firebase';
 import type { FirestoreCategory } from '../lib/types';
 import { luxuryEase } from '../lib/motion';
 import FadeImage from './FadeImage';
+import { getOptimizedImageUrl } from '../lib/cloudinary';
 
 export default function CategoryCarousel() {
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -114,7 +115,7 @@ export default function CategoryCarousel() {
               onDragStart={(e) => e.preventDefault()}
             >
               <FadeImage
-                src={cat.image || '/images/placeholder-category.svg'}
+                src={getOptimizedImageUrl(cat.image || '/images/placeholder-category.svg', { width: 500 })}
                 alt={cat.name}
                 loading="lazy"
                 draggable={false}

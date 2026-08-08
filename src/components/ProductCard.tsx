@@ -6,15 +6,20 @@ import { formatINR } from '../lib/products';
 import { useStore } from '../context/StoreContext';
 import { luxuryEase } from '../lib/motion';
 import FadeImage from './FadeImage';
+import { getOptimizedImageUrl } from '../lib/cloudinary';
 
 interface Props {
   product: Product;
   index?: number;
+  priority?: boolean;
 }
 
-export default function ProductCard({ product, index = 0 }: Props) {
+export default function ProductCard({ product, index = 0, priority }: Props) {
   const { toggleWishlist, isInWishlist } = useStore();
   const wished = isInWishlist(product.id);
+  const isPriority = priority ?? index < 4;
+  const rawImg = product.images?.[0] || '/images/placeholder.svg';
+  const imgUrl = getOptimizedImageUrl(rawImg, { width: 600 });
 
   return (
     <motion.article
@@ -27,9 +32,9 @@ export default function ProductCard({ product, index = 0 }: Props) {
       <div className="product-card-media relative overflow-hidden rounded-xl bg-zadel-surface">
         <Link to={`/product/${product.id}`} className="block aspect-[3/4] overflow-hidden">
           <FadeImage
-            src={product.images[0]}
+            src={imgUrl}
             alt={product.name}
-            loading="lazy"
+            priority={isPriority}
             className="product-card-img h-full w-full object-cover"
           />
         </Link>

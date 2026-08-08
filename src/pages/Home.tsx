@@ -10,6 +10,7 @@ import { getPublishedProducts } from '../lib/productCatalog';
 import { getProducts, subscribeToSettings } from '../lib/firebase';
 import type { Category, Product } from '../lib/types';
 import { heroChild, heroCta, heroParent, luxuryEase } from '../lib/motion';
+import { getOptimizedImageUrl } from '../lib/cloudinary';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>(() => getPublishedProducts());
@@ -19,6 +20,16 @@ export default function Home() {
   const [heroHeadlineLine2, setHeroHeadlineLine2] = useState<string>('Endlessly worn.');
   const [heroCtaText, setHeroCtaText] = useState<string>('Shop Collection');
   const [heroCtaLink, setHeroCtaLink] = useState<string>('/shop');
+
+  const optimizedHeroBg = getOptimizedImageUrl(heroBg, { width: 1600 });
+
+  // Preload hero image as soon as available
+  useEffect(() => {
+    if (optimizedHeroBg && optimizedHeroBg !== '/images/placeholder-hero.svg') {
+      const img = new Image();
+      img.src = optimizedHeroBg;
+    }
+  }, [optimizedHeroBg]);
 
   useEffect(() => {
     const unsub = subscribeToSettings((settings) => {
@@ -101,8 +112,9 @@ export default function Home() {
       <section className="hero-overlay relative flex h-[52vh] items-center overflow-hidden md:h-[60vh] lg:h-[70vh]">
         <div className="absolute inset-0">
           <FadeImage
-            src={heroBg}
+            src={optimizedHeroBg}
             alt="Zadel luxury fashion"
+            priority={true}
             className="h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-zadel-black via-zadel-black/55 to-zadel-black/30" />
