@@ -90,6 +90,11 @@ export interface FirestoreSettings {
   logo?: string;
   heroImage?: string;
   heroImages?: string[];
+  heroBrandText?: string;
+  heroHeadline?: string;
+  heroHeadlineLine2?: string;
+  heroCtaText?: string;
+  heroCtaLink?: string;
   currency?: string;
   taxRate?: number;
   freeShippingThreshold?: number;

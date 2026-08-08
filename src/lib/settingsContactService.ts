@@ -30,6 +30,11 @@ export async function getSettings(): Promise<FirestoreSettings> {
       logo: data.logo || '',
       heroImage: data.heroImage || '',
       heroImages: Array.isArray(data.heroImages) ? data.heroImages : (data.heroImage ? [data.heroImage] : []),
+      heroBrandText: data.heroBrandText ?? 'ZADEL',
+      heroHeadline: data.heroHeadline ?? 'Quiet luxury.',
+      heroHeadlineLine2: data.heroHeadlineLine2 ?? 'Endlessly worn.',
+      heroCtaText: data.heroCtaText ?? 'Shop Collection',
+      heroCtaLink: data.heroCtaLink ?? '/shop',
       currency: data.currency || 'USD',
       taxRate: typeof data.taxRate === 'number' ? data.taxRate : 0,
       freeShippingThreshold:
@@ -55,6 +60,11 @@ export async function getSettings(): Promise<FirestoreSettings> {
       logo: data.logo || '',
       heroImage: data.heroImage || '',
       heroImages: Array.isArray(data.heroImages) ? data.heroImages : (data.heroImage ? [data.heroImage] : []),
+      heroBrandText: data.heroBrandText ?? 'ZADEL',
+      heroHeadline: data.heroHeadline ?? 'Quiet luxury.',
+      heroHeadlineLine2: data.heroHeadlineLine2 ?? 'Endlessly worn.',
+      heroCtaText: data.heroCtaText ?? 'Shop Collection',
+      heroCtaLink: data.heroCtaLink ?? '/shop',
       currency: data.currency || 'USD',
       taxRate: typeof data.taxRate === 'number' ? data.taxRate : 0,
       freeShippingThreshold:
@@ -75,6 +85,11 @@ export async function getSettings(): Promise<FirestoreSettings> {
     logo: '',
     heroImage: '',
     heroImages: [],
+    heroBrandText: 'ZADEL',
+    heroHeadline: 'Quiet luxury.',
+    heroHeadlineLine2: 'Endlessly worn.',
+    heroCtaText: 'Shop Collection',
+    heroCtaLink: '/shop',
     currency: 'USD',
     taxRate: 0,
     freeShippingThreshold: 150,
@@ -118,6 +133,21 @@ export async function updateSettings(
   if (settingsData.heroImages !== undefined) {
     updates.heroImages = settingsData.heroImages;
   }
+  if (settingsData.heroBrandText !== undefined) {
+    updates.heroBrandText = settingsData.heroBrandText;
+  }
+  if (settingsData.heroHeadline !== undefined) {
+    updates.heroHeadline = settingsData.heroHeadline;
+  }
+  if (settingsData.heroHeadlineLine2 !== undefined) {
+    updates.heroHeadlineLine2 = settingsData.heroHeadlineLine2;
+  }
+  if (settingsData.heroCtaText !== undefined) {
+    updates.heroCtaText = settingsData.heroCtaText;
+  }
+  if (settingsData.heroCtaLink !== undefined) {
+    updates.heroCtaLink = settingsData.heroCtaLink;
+  }
 
   await setDoc(docRef, updates, { merge: true });
   return { id: docId, ...updates };
@@ -142,6 +172,11 @@ export function subscribeToSettings(
           logo: data.logo || '',
           heroImage: data.heroImage || '',
           heroImages: Array.isArray(data.heroImages) ? data.heroImages : (data.heroImage ? [data.heroImage] : []),
+          heroBrandText: data.heroBrandText ?? 'ZADEL',
+          heroHeadline: data.heroHeadline ?? 'Quiet luxury.',
+          heroHeadlineLine2: data.heroHeadlineLine2 ?? 'Endlessly worn.',
+          heroCtaText: data.heroCtaText ?? 'Shop Collection',
+          heroCtaLink: data.heroCtaLink ?? '/shop',
           currency: data.currency || 'USD',
           taxRate: typeof data.taxRate === 'number' ? data.taxRate : 0,
           freeShippingThreshold:
@@ -160,6 +195,11 @@ export function subscribeToSettings(
           logo: '',
           heroImage: '',
           heroImages: [],
+          heroBrandText: 'ZADEL',
+          heroHeadline: 'Quiet luxury.',
+          heroHeadlineLine2: 'Endlessly worn.',
+          heroCtaText: 'Shop Collection',
+          heroCtaLink: '/shop',
           currency: 'USD',
           taxRate: 0,
           freeShippingThreshold: 150,

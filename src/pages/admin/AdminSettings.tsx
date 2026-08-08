@@ -57,6 +57,11 @@ export default function AdminSettings() {
   // Hero Banner state
   const [heroImage, setHeroImage] = useState('');
   const [heroImages, setHeroImages] = useState<string[]>([]);
+  const [heroBrandText, setHeroBrandText] = useState('ZADEL');
+  const [heroHeadline, setHeroHeadline] = useState('Quiet luxury.');
+  const [heroHeadlineLine2, setHeroHeadlineLine2] = useState('Endlessly worn.');
+  const [heroCtaText, setHeroCtaText] = useState('Shop Collection');
+  const [heroCtaLink, setHeroCtaLink] = useState('/shop');
 
   // Logo upload / replace state
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -94,6 +99,11 @@ export default function AdminSettings() {
           ? [data.heroImage]
           : []
       );
+      setHeroBrandText(data.heroBrandText ?? 'ZADEL');
+      setHeroHeadline(data.heroHeadline ?? 'Quiet luxury.');
+      setHeroHeadlineLine2(data.heroHeadlineLine2 ?? 'Endlessly worn.');
+      setHeroCtaText(data.heroCtaText ?? 'Shop Collection');
+      setHeroCtaLink(data.heroCtaLink ?? '/shop');
       setLoading(false);
     });
 
@@ -344,6 +354,11 @@ export default function AdminSettings() {
         logo: logo.trim(),
         heroImage: heroImage.trim(),
         heroImages: heroImages,
+        heroBrandText: heroBrandText.trim() || 'ZADEL',
+        heroHeadline: heroHeadline.trim() || 'Quiet luxury.',
+        heroHeadlineLine2: heroHeadlineLine2.trim(),
+        heroCtaText: heroCtaText.trim() || 'Shop Collection',
+        heroCtaLink: heroCtaLink.trim() || '/shop',
       });
       addToast('success', 'Website branding and settings saved to Firestore.');
     } catch (err) {
@@ -695,6 +710,90 @@ export default function AdminSettings() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Hero Section Content Text & CTA Settings */}
+            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4 sm:p-5 space-y-4">
+              <div className="border-b border-neutral-900 pb-3 flex items-center justify-between">
+                <span className="text-neutral-200 font-medium">Hero Text & CTA Customization</span>
+                <a
+                  href="/admin/hero"
+                  className="text-zadel-gold hover:underline text-[11px] font-medium"
+                >
+                  Open Dedicated Hero Editor &rarr;
+                </a>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1.5 font-medium text-neutral-300">
+                    Small Hero Brand Text
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={heroBrandText}
+                    onChange={(e) => setHeroBrandText(e.target.value)}
+                    placeholder="e.g. ZADEL"
+                    className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none uppercase tracking-widest font-display"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 font-medium text-neutral-300">
+                    Main Hero Headline (Line 1)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={heroHeadline}
+                    onChange={(e) => setHeroHeadline(e.target.value)}
+                    placeholder="e.g. Quiet luxury."
+                    className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block mb-1.5 font-medium text-neutral-300">
+                    Main Hero Headline Subtitle (Line 2)
+                  </label>
+                  <input
+                    type="text"
+                    value={heroHeadlineLine2}
+                    onChange={(e) => setHeroHeadlineLine2(e.target.value)}
+                    placeholder="e.g. Endlessly worn."
+                    className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 font-medium text-neutral-300">
+                    CTA Button Text
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={heroCtaText}
+                    onChange={(e) => setHeroCtaText(e.target.value)}
+                    placeholder="e.g. Shop Collection"
+                    className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 font-medium text-neutral-300">
+                    CTA Button Link
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={heroCtaLink}
+                    onChange={(e) => setHeroCtaLink(e.target.value)}
+                    placeholder="e.g. /shop"
+                    className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none font-mono text-[11px]"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

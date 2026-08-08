@@ -115,16 +115,12 @@ export default function Header() {
           to="/"
           className="flex items-center justify-center transition-opacity hover:opacity-85 my-auto"
         >
-          {brandLogo ? (
+          {brandLogo && (
             <img
               src={brandLogo}
               alt={brandName}
               className="h-7 md:h-9 max-w-[140px] md:max-w-[200px] object-contain"
             />
-          ) : (
-            <span className="font-display text-xl md:text-2xl font-bold tracking-[0.2em] text-foreground uppercase">
-              {brandName}
-            </span>
           )}
         </Link>
 

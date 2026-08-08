@@ -14,6 +14,11 @@ import { heroChild, heroCta, heroParent, luxuryEase } from '../lib/motion';
 export default function Home() {
   const [products, setProducts] = useState<Product[]>(() => getPublishedProducts());
   const [heroBg, setHeroBg] = useState<string>('/images/placeholder-hero.svg');
+  const [heroBrandText, setHeroBrandText] = useState<string>('ZADEL');
+  const [heroHeadline, setHeroHeadline] = useState<string>('Quiet luxury.');
+  const [heroHeadlineLine2, setHeroHeadlineLine2] = useState<string>('Endlessly worn.');
+  const [heroCtaText, setHeroCtaText] = useState<string>('Shop Collection');
+  const [heroCtaLink, setHeroCtaLink] = useState<string>('/shop');
 
   useEffect(() => {
     const unsub = subscribeToSettings((settings) => {
@@ -24,6 +29,12 @@ export default function Home() {
       } else {
         setHeroBg('/images/placeholder-hero.svg');
       }
+
+      if (settings.heroBrandText) setHeroBrandText(settings.heroBrandText);
+      if (settings.heroHeadline) setHeroHeadline(settings.heroHeadline);
+      if (settings.heroHeadlineLine2 !== undefined) setHeroHeadlineLine2(settings.heroHeadlineLine2);
+      if (settings.heroCtaText) setHeroCtaText(settings.heroCtaText);
+      if (settings.heroCtaLink) setHeroCtaLink(settings.heroCtaLink);
     });
 
     return () => {
@@ -110,22 +121,26 @@ export default function Home() {
               variants={heroChild}
               className="mb-5 font-display text-2xl tracking-[0.4em] text-white md:mb-6 md:text-3xl lg:text-4xl"
             >
-              ZADEL
+              {heroBrandText}
             </motion.p>
             <motion.h1
               variants={heroChild}
               className="font-display text-4xl leading-[1.08] tracking-wide text-white sm:text-5xl md:text-5xl lg:text-6xl"
             >
-              Quiet luxury.
-              <br />
-              <span className="text-white/70">Endlessly worn.</span>
+              {heroHeadline}
+              {heroHeadlineLine2 && (
+                <>
+                  <br />
+                  <span className="text-white/70">{heroHeadlineLine2}</span>
+                </>
+              )}
             </motion.h1>
             <motion.div variants={heroCta} className="mt-8 md:mt-10">
               <Link
-                to="/shop"
+                to={heroCtaLink}
                 className="btn-luxury inline-flex items-center gap-2 rounded-full bg-zadel-gold px-6 py-2.5 text-[10px] font-semibold tracking-[0.22em] text-zadel-ink uppercase md:px-7 md:py-3 md:text-[11px]"
               >
-                Shop Collection
+                {heroCtaText}
                 <ArrowRight size={13} />
               </Link>
             </motion.div>

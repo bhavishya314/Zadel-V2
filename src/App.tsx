@@ -12,6 +12,7 @@ import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminCategories from './pages/admin/AdminCategories';
+import AdminHero from './pages/admin/AdminHero';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminContact from './pages/admin/AdminContact';
 import AdminSettings from './pages/admin/AdminSettings';
@@ -37,6 +38,7 @@ export default function App() {
                 <Route index element={<AdminDashboard />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="categories" element={<AdminCategories />} />
+                <Route path="hero" element={<AdminHero />} />
                 <Route path="reviews" element={<AdminReviews />} />
                 <Route path="contact" element={<AdminContact />} />
                 <Route path="settings" element={<AdminSettings />} />
