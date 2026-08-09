@@ -98,6 +98,21 @@ export default function ProductPage() {
       setQty(1);
       setActiveImage(0);
       setSizeError(false);
+
+      // Preload primary product image immediately with high priority
+      if (product.images && product.images.length > 0) {
+        const head = document.head;
+        const url = getOptimizedImageUrl(product.images[0], { width: 1000 });
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = url;
+        (link as any).fetchPriority = 'high';
+        head.appendChild(link);
+        return () => {
+          if (head.contains(link)) head.removeChild(link);
+        };
+      }
     }
   }, [product?.id]);
 

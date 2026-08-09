@@ -5,6 +5,7 @@ import { Search, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { formatINR } from '../lib/products';
 import { getPublishedProducts } from '../lib/productCatalog';
+import { getOptimizedImageUrl } from '../lib/cloudinary';
 
 export default function SearchModal() {
   const { isSearchOpen, setSearchOpen } = useStore();
@@ -90,8 +91,9 @@ export default function SearchModal() {
                     className="flex items-center gap-4 px-5 py-3 transition hover:bg-foreground/5"
                   >
                     <img
-                      src={product.images[0]}
+                      src={getOptimizedImageUrl(product.images[0], { width: 150 })}
                       alt=""
+                      loading="lazy"
                       className="h-14 w-11 rounded-md object-cover"
                     />
                     <div className="min-w-0 flex-1">

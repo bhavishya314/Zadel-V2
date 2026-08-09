@@ -6,6 +6,7 @@ import { useStore } from '../context/StoreContext';
 import { useTheme } from '../context/ThemeContext';
 import { luxuryEase, navFade } from '../lib/motion';
 import { subscribeToSettings } from '../lib/firebase';
+import { getOptimizedImageUrl } from '../lib/cloudinary';
 
 const links = [
   { to: '/', label: 'Home' },
@@ -117,8 +118,10 @@ export default function Header() {
         >
           {brandLogo && (
             <img
-              src={brandLogo}
+              src={getOptimizedImageUrl(brandLogo, { width: 300 })}
               alt={brandName}
+              loading="eager"
+              fetchPriority="high"
               className="h-7 md:h-9 max-w-[140px] md:max-w-[200px] object-contain"
             />
           )}

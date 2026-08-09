@@ -13,6 +13,7 @@ import {
 } from '../lib/productCatalog';
 import { subscribeToProducts, subscribeToCategories } from '../lib/firebase';
 import type { Category, Product } from '../lib/types';
+import { getOptimizedImageUrl } from '../lib/cloudinary';
 
 export default function Shop() {
   const [params, setParams] = useSearchParams();
@@ -157,6 +158,35 @@ export default function Shop() {
       setInitialLoading(false);
     })();
   }, [category, q, sort, allCatalogProducts]);
+
+  /** Preload above-the-fold shop product images in parallel */
+  useEffect(() => {
+    if (items.length > 0) {
+      const top4 = items.slice(0, 4);
+      const head = document.head;
+      const links: HTMLLinkElement[] = [];
+
+      top4.forEach((p) => {
+        const raw = p.images?.[0];
+        if (raw) {
+          const url = getOptimizedImageUrl(raw, { width: 600 });
+          const link = document.createElement('link');
+          link.rel = 'preload';
+          link.as = 'image';
+          link.href = url;
+          (link as any).fetchPriority = 'high';
+          head.appendChild(link);
+          links.push(link);
+        }
+      });
+
+      return () => {
+        links.forEach((l) => {
+          if (head.contains(l)) head.removeChild(l);
+        });
+      };
+    }
+  }, [items]);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMore || initialLoading) return;
@@ -348,7 +378,7 @@ export default function Shop() {
           <>
             <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-6 lg:grid-cols-4">
               {items.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} />
+                <ProductCard key={p.id} product={p} index={i} priority={i < 4} />
               ))}
             </div>
 

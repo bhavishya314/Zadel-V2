@@ -23,13 +23,44 @@ export default function Home() {
 
   const optimizedHeroBg = getOptimizedImageUrl(heroBg, { width: 1600 });
 
-  // Preload hero image as soon as available
+  // Preload hero image and above-the-fold product images immediately & in parallel
   useEffect(() => {
+    const head = document.head;
+    const preloadLinks: HTMLLinkElement[] = [];
+
+    // Preload Hero image with high priority
     if (optimizedHeroBg && optimizedHeroBg !== '/images/placeholder-hero.svg') {
-      const img = new Image();
-      img.src = optimizedHeroBg;
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = optimizedHeroBg;
+      (link as any).fetchPriority = 'high';
+      head.appendChild(link);
+      preloadLinks.push(link);
     }
-  }, [optimizedHeroBg]);
+
+    // Preload top 4 featured product images in parallel
+    const topFeatured = products.filter((p) => p.published !== false && p.featured).slice(0, 4);
+    topFeatured.forEach((p) => {
+      const raw = p.images?.[0];
+      if (raw) {
+        const url = getOptimizedImageUrl(raw, { width: 600 });
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = url;
+        (link as any).fetchPriority = 'high';
+        head.appendChild(link);
+        preloadLinks.push(link);
+      }
+    });
+
+    return () => {
+      preloadLinks.forEach((l) => {
+        if (head.contains(l)) head.removeChild(l);
+      });
+    };
+  }, [optimizedHeroBg, products]);
 
   useEffect(() => {
     const unsub = subscribeToSettings((settings) => {
@@ -181,7 +212,7 @@ export default function Home() {
         </motion.div>
         <div className="mx-auto grid max-w-6xl grid-cols-2 justify-items-stretch gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
           {featured.map((p, i) => (
-            <ProductCard key={p.id} product={p} index={i} />
+            <ProductCard key={p.id} product={p} index={i} priority={true} />
           ))}
         </div>
       </section>
@@ -215,7 +246,7 @@ export default function Home() {
         </motion.div>
         <div className="mx-auto grid max-w-6xl grid-cols-2 justify-items-stretch gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
           {bestSellers.map((p, i) => (
-            <ProductCard key={p.id} product={p} index={i} />
+            <ProductCard key={p.id} product={p} index={i} priority={false} />
           ))}
         </div>
       </section>
@@ -237,7 +268,7 @@ export default function Home() {
 
           <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-6 lg:grid-cols-4">
             {shopMore.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
+              <ProductCard key={p.id} product={p} index={i} priority={false} />
             ))}
           </div>
 

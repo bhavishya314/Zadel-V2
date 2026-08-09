@@ -4,6 +4,7 @@ import { Heart, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { formatINR } from '../lib/products';
 import { getPublishedProducts } from '../lib/productCatalog';
+import { getOptimizedImageUrl } from '../lib/cloudinary';
 import EmptyState from './EmptyState';
 
 export default function WishlistDrawer() {
@@ -60,8 +61,9 @@ export default function WishlistDrawer() {
                         className="h-28 w-22 shrink-0 overflow-hidden rounded-lg bg-zadel-surface"
                       >
                         <img
-                          src={product.images[0]}
+                          src={getOptimizedImageUrl(product.images[0], { width: 200 })}
                           alt={product.name}
+                          loading="lazy"
                           className="h-full w-full object-cover"
                         />
                       </Link>

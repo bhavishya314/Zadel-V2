@@ -18,15 +18,19 @@ export default function FadeImage({
   fetchPriority,
   ...rest
 }: Props) {
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => priority);
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
+    if (priority) {
+      setLoaded(true);
+      return;
+    }
     // If the image is already cached or completed loading, reveal immediately
     if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
       setLoaded(true);
     }
-  }, [src]);
+  }, [src, priority]);
 
   const calcLoading = loading ?? (priority ? 'eager' : 'lazy');
   const calcFetchPriority = fetchPriority ?? (priority ? 'high' : 'auto');
@@ -39,7 +43,7 @@ export default function FadeImage({
       loading={calcLoading}
       fetchPriority={calcFetchPriority}
       decoding={priority ? 'sync' : 'async'}
-      className={`img-fade ${loaded ? 'is-loaded' : ''} ${className}`}
+      className={`img-fade ${loaded || priority ? 'is-loaded' : ''} ${className}`}
       onLoad={(e) => {
         setLoaded(true);
         onLoad?.(e);

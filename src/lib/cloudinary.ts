@@ -108,7 +108,7 @@ export const deleteHeroImageFromStorage = deleteImageFromCloudinary;
 
 /**
  * Transforms Cloudinary image URLs to use automatic format (f_auto), automatic quality (q_auto),
- * and an optional max width constraint for massive performance gains.
+ * crop limit, and explicit max width constraint for massive performance gains.
  */
 export function getOptimizedImageUrl(
   url?: string,
@@ -125,17 +125,29 @@ export function getOptimizedImageUrl(
   if (uploadIndex === -1) return url;
 
   const prefix = url.substring(0, uploadIndex + 8);
-  const suffix = url.substring(uploadIndex + 8);
+  let suffix = url.substring(uploadIndex + 8);
 
-  // If transformations like f_auto or q_auto already present, return unchanged
-  if (suffix.startsWith('f_auto') || suffix.startsWith('q_auto')) {
-    return url;
+  // If there is an existing transformation block before /v1234/ or public_id, strip it
+  const firstSlashIndex = suffix.indexOf('/');
+  if (firstSlashIndex !== -1) {
+    const firstSegment = suffix.substring(0, firstSlashIndex);
+    if (
+      !/^v\d+$/.test(firstSegment) &&
+      (firstSegment.includes('f_auto') ||
+        firstSegment.includes('q_auto') ||
+        firstSegment.includes('w_') ||
+        firstSegment.includes('c_') ||
+        firstSegment.includes('h_') ||
+        firstSegment.includes(','))
+    ) {
+      suffix = suffix.substring(firstSlashIndex + 1);
+    }
   }
 
   const quality = options.quality ? `q_${options.quality}` : 'q_auto';
+  const crop = options.crop ? `c_${options.crop}` : 'c_limit';
   const width = options.width ? `,w_${options.width}` : '';
-  const crop = options.crop ? `,c_${options.crop}` : '';
 
-  return `${prefix}f_auto,${quality}${width}${crop}/${suffix}`;
+  return `${prefix}f_auto,${quality},${crop}${width}/${suffix}`;
 }
 

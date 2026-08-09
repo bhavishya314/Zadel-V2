@@ -6,6 +6,8 @@ import { formatINR } from '../lib/products';
 import { orderCartOnWhatsApp } from '../lib/whatsappOrder';
 import EmptyState from './EmptyState';
 
+import { getOptimizedImageUrl } from '../lib/cloudinary';
+
 export default function CartDrawer() {
   const {
     isCartOpen,
@@ -66,8 +68,9 @@ export default function CartDrawer() {
                         className="h-28 w-22 shrink-0 overflow-hidden rounded-lg bg-zadel-surface"
                       >
                         <img
-                          src={item.product.images[0]}
+                          src={getOptimizedImageUrl(item.product.images[0], { width: 200 })}
                           alt={item.product.name}
+                          loading="lazy"
                           className="h-full w-full object-cover"
                         />
                       </Link>
