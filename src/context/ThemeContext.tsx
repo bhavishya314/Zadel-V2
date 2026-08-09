@@ -19,13 +19,28 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark');
+  const [theme, setThemeState] = useState<Theme>(() => {
+    try {
+      const saved = localStorage.getItem('zadel_theme');
+      if (saved === 'dark' || saved === 'light') {
+        return saved;
+      }
+    } catch {
+      // LocalStorage access fail safe
+    }
+    return 'light';
+  });
 
   useEffect(() => {
     const root = document.documentElement;
     root.classList.add('theme-transitioning');
     root.setAttribute('data-theme', theme);
     root.style.colorScheme = theme;
+    try {
+      localStorage.setItem('zadel_theme', theme);
+    } catch {
+      // Ignore
+    }
     const t = window.setTimeout(() => {
       root.classList.remove('theme-transitioning');
     }, 320);

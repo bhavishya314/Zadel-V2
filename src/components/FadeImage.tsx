@@ -37,7 +37,7 @@ export default function FadeImage({
       src={src}
       alt={alt}
       loading={calcLoading}
-      {...({ fetchpriority: calcFetchPriority } as any)}
+      fetchPriority={calcFetchPriority}
       decoding={priority ? 'sync' : 'async'}
       className={`img-fade ${loaded ? 'is-loaded' : ''} ${className}`}
       onLoad={(e) => {

@@ -570,6 +570,36 @@ select {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28) !important;
   }
 
+  /* Shop by Category - Clean solid text & dark image gradient overlay */
+  .category-card-overlay {
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.92) 0%,
+      rgba(0, 0, 0, 0.5) 45%,
+      transparent 100%
+    ) !important;
+  }
+
+  .category-card-title {
+    color: #ffffff !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+
+  .category-card-desc {
+    color: rgba(255, 255, 255, 0.85) !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+
+  .group:hover .category-card-title {
+    color: #ffffff !important;
+  }
+
+  .group:hover .category-card-desc {
+    color: #c4a574 !important;
+  }
+
   .bg-black\/80.text-zadel-gold,
   .bg-black\/60.text-white,
   .wishlist-float.is-idle {

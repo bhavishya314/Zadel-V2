@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
   ShieldCheck,
   LogOut,
@@ -15,10 +16,13 @@ import {
   Menu,
   X,
   ChevronRight,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -72,6 +76,19 @@ export default function AdminLayout() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-300 hover:text-foreground transition-colors cursor-pointer"
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            aria-label="Toggle Theme"
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4 text-zadel-gold" />
+            ) : (
+              <Moon className="h-4 w-4 text-zadel-gold" />
+            )}
+          </button>
           <Link
             to="/"
             target="_blank"
@@ -158,6 +175,19 @@ export default function AdminLayout() {
 
             {/* Drawer Footer */}
             <div className="pt-6 border-t border-neutral-800 space-y-3">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex items-center justify-between w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2.5 text-xs text-neutral-300 hover:border-neutral-700 hover:text-foreground transition-colors cursor-pointer"
+              >
+                <span className="font-medium">Theme: {theme === 'dark' ? 'Dark' : 'Light'}</span>
+                {theme === 'dark' ? (
+                  <Sun className="h-3.5 w-3.5 text-zadel-gold" />
+                ) : (
+                  <Moon className="h-3.5 w-3.5 text-zadel-gold" />
+                )}
+              </button>
+
               <Link
                 to="/"
                 target="_blank"
@@ -240,6 +270,19 @@ export default function AdminLayout() {
 
           {/* Desktop Footer Actions */}
           <div className="border-t border-neutral-800 pt-5 space-y-3">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center justify-between w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2.5 text-xs text-neutral-300 hover:border-neutral-700 hover:text-foreground transition-colors group cursor-pointer"
+            >
+              <span className="font-medium">Theme: {theme === 'dark' ? 'Dark' : 'Light'}</span>
+              {theme === 'dark' ? (
+                <Sun className="h-3.5 w-3.5 text-zadel-gold" />
+              ) : (
+                <Moon className="h-3.5 w-3.5 text-zadel-gold" />
+              )}
+            </button>
+
             <Link
               to="/"
               target="_blank"
@@ -279,7 +322,27 @@ export default function AdminLayout() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex items-center gap-3 text-xs">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center gap-2 rounded-full bg-neutral-900 border border-neutral-800 px-3 py-1.5 text-neutral-300 hover:text-foreground hover:border-neutral-700 transition-colors cursor-pointer"
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+              aria-label="Toggle Theme"
+            >
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="h-3.5 w-3.5 text-zadel-gold" />
+                  <span className="font-mono text-[11px]">Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="h-3.5 w-3.5 text-zadel-gold" />
+                  <span className="font-mono text-[11px]">Dark Mode</span>
+                </>
+              )}
+            </button>
+
             <div className="flex items-center gap-2 rounded-full bg-neutral-900 border border-neutral-800 px-3 py-1 text-neutral-300">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
               <span className="font-mono text-[11px] truncate max-w-[180px]">

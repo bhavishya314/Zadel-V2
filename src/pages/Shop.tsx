@@ -295,8 +295,8 @@ export default function Shop() {
                     onClick={() => updateParam('category', c === 'All' ? null : c)}
                     className={`chip-luxury shrink-0 snap-start rounded-full px-4 py-2 text-[11px] tracking-[0.15em] uppercase ${
                       active
-                        ? 'bg-zadel-gold text-zadel-ink shadow-[0_4px_14px_rgba(196,165,116,0.25)]'
-                        : 'border border-foreground/10 text-foreground/55 hover:border-foreground/25 hover:text-foreground'
+                        ? 'bg-zadel-gold font-semibold text-zadel-ink shadow-[0_4px_14px_rgba(196,165,116,0.25)]'
+                        : 'border border-foreground/20 font-medium text-foreground/80 hover:border-foreground/40 hover:text-foreground'
                     }`}
                   >
                     {c}

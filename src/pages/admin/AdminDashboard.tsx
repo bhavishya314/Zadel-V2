@@ -1,9 +1,11 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { ShieldCheck, User, Activity, Database, Lock, CheckCircle2 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import { ShieldCheck, User, Activity, Database, Lock, CheckCircle2, Sun, Moon } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -88,7 +90,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Firebase Connection */}
-        <div className="rounded-xl border border-neutral-800 bg-zadel-elevated p-5 sm:p-6 space-y-4 md:col-span-2 lg:col-span-1">
+        <div className="rounded-xl border border-neutral-800 bg-zadel-elevated p-5 sm:p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
             <div className="flex items-center gap-2">
               <Database className="h-4 w-4 text-zadel-gold" />
@@ -114,6 +116,48 @@ export default function AdminDashboard() {
               <span className="text-neutral-500 block mb-0.5">Session Status</span>
               <span className="text-neutral-300">Persistent across tab & browser reloads</span>
             </div>
+          </div>
+        </div>
+
+        {/* Theme Governance */}
+        <div className="rounded-xl border border-neutral-800 bg-zadel-elevated p-5 sm:p-6 space-y-4 md:col-span-2 lg:col-span-1">
+          <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
+            <div className="flex items-center gap-2">
+              {theme === 'dark' ? (
+                <Moon className="h-4 w-4 text-zadel-gold" />
+              ) : (
+                <Sun className="h-4 w-4 text-zadel-gold" />
+              )}
+              <h2 className="text-xs sm:text-sm font-medium uppercase tracking-wider text-neutral-300">
+                Theme Appearance
+              </h2>
+            </div>
+            <span className="rounded-full bg-zadel-gold/10 border border-zadel-gold/30 px-2 py-0.5 text-[10px] font-semibold text-zadel-gold uppercase">
+              {theme} Mode
+            </span>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            <p className="text-neutral-400 leading-relaxed">
+              Switch between Light Mode and Dark Mode for the Admin Dashboard.
+            </p>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-2 text-xs font-medium text-foreground hover:border-neutral-700 transition-colors cursor-pointer"
+            >
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="h-4 w-4 text-zadel-gold" />
+                  <span>Switch to Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="h-4 w-4 text-zadel-gold" />
+                  <span>Switch to Dark Mode</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
