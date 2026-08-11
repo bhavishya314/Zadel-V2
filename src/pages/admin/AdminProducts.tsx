@@ -84,6 +84,7 @@ export default function AdminProducts() {
   // Form State
   const [formName, setFormName] = useState('');
   const [formCategory, setFormCategory] = useState('Men');
+  const [formSizes, setFormSizes] = useState('S, M, L, XL');
   const [formMrp, setFormMrp] = useState<number>(0);
   const [formPrice, setFormPrice] = useState<number>(0);
   const [formDescription, setFormDescription] = useState('');
@@ -405,6 +406,7 @@ export default function AdminProducts() {
     setEditingProduct(null);
     setFormName('');
     setFormCategory('Men');
+    setFormSizes('S, M, L, XL');
     setFormMrp(5999);
     setFormPrice(4999);
     setFormDescription('');
@@ -421,6 +423,11 @@ export default function AdminProducts() {
     setEditingProduct(prod);
     setFormName(prod.name || prod.title || '');
     setFormCategory(prod.category || 'Men');
+    setFormSizes(
+      Array.isArray(prod.sizes) && prod.sizes.length > 0
+        ? prod.sizes.join(', ')
+        : 'S, M, L, XL'
+    );
     const existingMrp = prod.originalPrice || prod.mrp || prod.price || 0;
     const existingPrice = prod.price || 0;
     setFormMrp(existingMrp);
@@ -488,6 +495,11 @@ export default function AdminProducts() {
     setFormError(null);
 
     const finalImages = formImages.length > 0 ? formImages : ['/images/placeholder.svg'];
+    const parsedSizesArr = formSizes
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const finalSizes = parsedSizesArr.length > 0 ? parsedSizesArr : ['S', 'M', 'L', 'XL'];
 
     try {
       if (editingProduct) {
@@ -495,6 +507,7 @@ export default function AdminProducts() {
           name: formName.trim(),
           title: formName.trim(),
           category: formCategory,
+          sizes: finalSizes,
           price: priceVal,
           originalPrice: mrpVal,
           mrp: mrpVal,
@@ -515,6 +528,7 @@ export default function AdminProducts() {
           title: formName.trim(),
           subtitle: formCategory,
           category: formCategory,
+          sizes: finalSizes,
           price: priceVal,
           originalPrice: mrpVal,
           mrp: mrpVal,
@@ -1178,6 +1192,19 @@ export default function AdminProducts() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium text-neutral-300">
+                  Available Sizes (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={formSizes}
+                  onChange={(e) => setFormSizes(e.target.value)}
+                  placeholder="e.g. S, M, L, XL"
+                  className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none"
+                />
               </div>
 
               {/* Product Pricing Structure */}

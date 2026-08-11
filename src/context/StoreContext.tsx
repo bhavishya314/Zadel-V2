@@ -33,6 +33,8 @@ interface StoreContextValue {
   setSearchOpen: (open: boolean) => void;
   isWishlistOpen: boolean;
   setWishlistOpen: (open: boolean) => void;
+  isCheckoutOpen: boolean;
+  setCheckoutOpen: (open: boolean) => void;
   showToast: (message: string) => void;
 }
 
@@ -65,6 +67,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setCartOpen] = useState(false);
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [isWishlistOpen, setWishlistOpen] = useState(false);
+  const [isCheckoutOpen, setCheckoutOpen] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   useEffect(() => {
@@ -165,6 +168,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSearchOpen,
       isWishlistOpen,
       setWishlistOpen,
+      isCheckoutOpen,
+      setCheckoutOpen,
       showToast,
     }),
     [
@@ -183,6 +188,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       isCartOpen,
       isSearchOpen,
       isWishlistOpen,
+      isCheckoutOpen,
       showToast,
     ]
   );

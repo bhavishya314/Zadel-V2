@@ -130,6 +130,47 @@
         "createdAt": { "type": "string", "description": "ISO timestamp of creation" }
       },
       "required": ["id", "productId", "rating"]
+    },
+    "orders": {
+      "title": "Orders",
+      "description": "Store customer orders and payment verification status",
+      "properties": {
+        "customer": {
+          "type": "object",
+          "description": "Customer contact and shipping details"
+        },
+        "items": {
+          "type": "array",
+          "description": "List of ordered products and quantities"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total order amount in INR"
+        },
+        "razorpayOrderId": {
+          "type": "string",
+          "description": "Razorpay order identifier"
+        },
+        "razorpayPaymentId": {
+          "type": "string",
+          "description": "Razorpay payment transaction identifier"
+        },
+        "status": {
+          "type": "string",
+          "description": "Payment status, e.g. paid"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp when order was created"
+        }
+      },
+      "required": ["customer", "items", "totalAmount", "razorpayOrderId", "razorpayPaymentId", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": "orders",
+      "description": "Stores verified paid customer orders"
     }
   }
 }

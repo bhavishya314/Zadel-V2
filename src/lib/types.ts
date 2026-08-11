@@ -157,3 +157,31 @@ export interface FirestoreAdminConfig {
   adminUid?: string;
   createdAt?: string;
 }
+
+/**
+ * Model for `orders` collection document in Firestore
+ */
+export interface FirestoreOrder {
+  id?: string;
+  customer: {
+    fullName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    pincode: string;
+  };
+  items: Array<{
+    productId: string;
+    productName: string;
+    price: number;
+    quantity: number;
+    size: string;
+    image?: string;
+  }>;
+  totalAmount: number;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  status: 'paid';
+  createdAt: string;
+}

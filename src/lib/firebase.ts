@@ -165,6 +165,7 @@ export {
   getProducts,
   getProduct,
   subscribeToProducts,
+  getDefaultSizesForCategory,
 } from './productService';
 
 // Re-export Category Firestore CRUD service functions

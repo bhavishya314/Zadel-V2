@@ -15,6 +15,15 @@ import { products as initialProducts } from './products';
 
 const PRODUCTS_COLLECTION = 'products';
 
+export function getDefaultSizesForCategory(category?: string): string[] {
+  const cat = (category || '').toLowerCase();
+  if (cat.includes('women')) return ['XS', 'S', 'M', 'L'];
+  if (cat.includes('men')) return ['S', 'M', 'L', 'XL'];
+  if (cat.includes('outerwear')) return ['S', 'M', 'L', 'XL'];
+  if (cat.includes('accessory') || cat.includes('accessories')) return ['S', 'M', 'L'];
+  return ['S', 'M', 'L', 'XL'];
+}
+
 /**
  * Helper to parse and normalize a product document from Firestore
  */
@@ -42,6 +51,16 @@ export function parseProductDoc(id: string, data: any): FirestoreProduct {
       ? Math.round(data.discountPercentage)
       : autoDiscount;
 
+  let parsedSizes: string[] = [];
+  if (Array.isArray(data.sizes) && data.sizes.length > 0) {
+    parsedSizes = data.sizes.map((s: any) => String(s).trim()).filter(Boolean);
+  } else if (typeof data.sizes === 'string' && data.sizes.trim()) {
+    parsedSizes = data.sizes.split(',').map((s: string) => s.trim()).filter(Boolean);
+  }
+  if (parsedSizes.length === 0) {
+    parsedSizes = getDefaultSizesForCategory(data.category);
+  }
+
   return {
     id,
     images: Array.isArray(data.images) ? data.images : [],
@@ -53,7 +72,7 @@ export function parseProductDoc(id: string, data: any): FirestoreProduct {
     discount,
     discountPercentage: discount,
     category: data.category || 'Uncategorized',
-    sizes: Array.isArray(data.sizes) ? data.sizes : [],
+    sizes: parsedSizes,
     stock: typeof data.stock === 'number' ? data.stock : data.inStock ? 10 : 0,
     featured: Boolean(data.featured),
     bestSeller: Boolean(data.bestSeller),
@@ -141,6 +160,16 @@ export async function addProduct(
       ? Math.round(productData.discountPercentage)
       : calculatedDiscount;
 
+  let addSizes: string[] = [];
+  if (Array.isArray(productData.sizes) && productData.sizes.length > 0) {
+    addSizes = productData.sizes.map((s: any) => String(s).trim()).filter(Boolean);
+  } else if (typeof productData.sizes === 'string' && (productData.sizes as string).trim()) {
+    addSizes = (productData.sizes as string).split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  if (addSizes.length === 0) {
+    addSizes = getDefaultSizesForCategory(productData.category);
+  }
+
   const payload: Omit<FirestoreProduct, 'id'> = {
     images: Array.isArray(productData.images) ? productData.images : [],
     name: productData.name || 'Untitled Product',
@@ -151,7 +180,7 @@ export async function addProduct(
     discount,
     discountPercentage: discount,
     category: productData.category || 'Uncategorized',
-    sizes: Array.isArray(productData.sizes) ? productData.sizes : [],
+    sizes: addSizes,
     stock: typeof productData.stock === 'number' ? productData.stock : 0,
     featured: Boolean(productData.featured),
     bestSeller: Boolean(productData.bestSeller),

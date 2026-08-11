@@ -5,6 +5,7 @@ import Footer from './Footer';
 import CartDrawer from './CartDrawer';
 import WishlistDrawer from './WishlistDrawer';
 import SearchModal from './SearchModal';
+import CheckoutModal from './CheckoutModal';
 import Toast from './Toast';
 
 export default function Layout() {
@@ -24,6 +25,7 @@ export default function Layout() {
       <CartDrawer />
       <WishlistDrawer />
       <SearchModal />
+      <CheckoutModal />
       <Toast />
     </div>
   );

@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { formatINR } from '../lib/products';
-import { orderCartOnWhatsApp } from '../lib/whatsappOrder';
 import EmptyState from './EmptyState';
 
 import { getOptimizedImageUrl } from '../lib/cloudinary';
@@ -12,6 +11,7 @@ export default function CartDrawer() {
   const {
     isCartOpen,
     setCartOpen,
+    setCheckoutOpen,
     cart,
     cartTotal,
     updateQuantity,
@@ -136,15 +136,15 @@ export default function CartDrawer() {
                   <span className="text-sm text-foreground/50">Subtotal</span>
                   <span className="font-display text-xl text-foreground">{formatINR(cartTotal)}</span>
                 </div>
-                <p className="mb-4 text-center text-[11px] tracking-wide text-foreground/35">
-                  Complete your order via WhatsApp
-                </p>
                 <button
                   type="button"
-                  onClick={() => orderCartOnWhatsApp(cart, cartTotal)}
-                  className="btn-luxury w-full rounded-full bg-zadel-gold py-3.5 text-[11px] font-semibold tracking-[0.18em] text-zadel-ink uppercase hover:bg-zadel-gold-light"
+                  onClick={() => {
+                    setCartOpen(false);
+                    setCheckoutOpen(true);
+                  }}
+                  className="btn-luxury w-full rounded-full bg-zadel-gold py-3.5 text-[11px] font-semibold tracking-[0.18em] text-zadel-ink uppercase transition hover:bg-zadel-gold-light"
                 >
-                  Order on WhatsApp
+                  Pay Online
                 </button>
                 <button
                   type="button"

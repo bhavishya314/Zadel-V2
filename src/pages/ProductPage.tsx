@@ -10,10 +10,9 @@ import {
   getPublishedProductById,
   getRelatedPublishedProducts,
 } from '../lib/productCatalog';
-import { getProduct } from '../lib/firebase';
+import { getProduct, getDefaultSizesForCategory } from '../lib/firebase';
 import { useStore } from '../context/StoreContext';
 import { luxuryEase } from '../lib/motion';
-import { orderProductOnWhatsApp } from '../lib/whatsappOrder';
 import type { Category, Product } from '../lib/types';
 import { getOptimizedImageUrl } from '../lib/cloudinary';
 
@@ -59,7 +58,10 @@ export default function ProductPage() {
               discount: fp.discount,
               category: fp.category as Category,
               description: fp.description,
-              sizes: fp.sizes,
+              sizes:
+                Array.isArray(fp.sizes) && fp.sizes.length > 0
+                  ? fp.sizes
+                  : getDefaultSizesForCategory(fp.category),
               images: fp.images,
               featured: Boolean(fp.featured),
               bestSeller: Boolean(fp.bestSeller),
@@ -163,15 +165,6 @@ export default function ProductPage() {
   const handleAdd = () => {
     if (!ensureSize()) return;
     addToCart(product, size, qty);
-  };
-
-  const handleOrderOnWhatsApp = () => {
-    if (!ensureSize()) return;
-    orderProductOnWhatsApp({
-      product,
-      size,
-      quantity: qty,
-    });
   };
 
   return (
@@ -281,7 +274,10 @@ export default function ProductPage() {
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
-                {product.sizes.map((s) => (
+                {(product.sizes && product.sizes.length > 0
+                  ? product.sizes
+                  : getDefaultSizesForCategory(product.category)
+                ).map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -350,13 +346,6 @@ export default function ProductPage() {
               >
                 <ShoppingBag size={16} strokeWidth={1.75} />
                 Add to Cart
-              </button>
-              <button
-                type="button"
-                onClick={handleOrderOnWhatsApp}
-                className="btn-luxury inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-zadel-gold py-3.5 text-[11px] font-semibold tracking-[0.18em] text-zadel-ink uppercase hover:bg-zadel-gold-light"
-              >
-                Order on WhatsApp
               </button>
               <button
                 type="button"
