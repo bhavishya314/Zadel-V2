@@ -154,10 +154,13 @@ app.post(
 );
 
 // Fallback JSON 404 handler for unmatched API routes
-app.use("/api/*", (req, res) => {
-  res.status(404).json({
-    error: `API route not found: ${req.method} ${req.originalUrl || req.url}`,
-  });
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api") || process.env.VERCEL) {
+    return res.status(404).json({
+      error: `API route not found: ${req.method} ${req.originalUrl || req.url}`,
+    });
+  }
+  next();
 });
 
 export default app;
