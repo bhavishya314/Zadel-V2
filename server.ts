@@ -31,120 +31,133 @@ function getRazorpayInstance() {
 }
 
 // POST /api/razorpay/create-order
-app.post(["/api/razorpay/create-order", "/razorpay/create-order"], async (req, res) => {
-  try {
-    const { amount, currency = "INR", receipt, notes } = req.body || {};
+app.post(
+  ["/api/razorpay/create-order", "/razorpay/create-order", "*/create-order"],
+  async (req, res) => {
+    try {
+      const { amount, currency = "INR", receipt, notes } = req.body || {};
 
-    if (!amount || typeof amount !== "number" || amount <= 0) {
-      return res.status(400).json({
-        error: "Invalid amount. 'amount' is required and must be a positive number.",
-      });
-    }
+      if (!amount || typeof amount !== "number" || amount <= 0) {
+        return res.status(400).json({
+          error: "Invalid amount. 'amount' is required and must be a positive number.",
+        });
+      }
 
-    // Convert amount to paise (1 INR = 100 paise)
-    const amountInPaise = Math.round(amount * 100);
+      // Convert amount to paise (1 INR = 100 paise)
+      const amountInPaise = Math.round(amount * 100);
 
-    const razorpay = getRazorpayInstance();
+      const razorpay = getRazorpayInstance();
 
-    const options = {
-      amount: amountInPaise,
-      currency: currency || "INR",
-      receipt: receipt || `receipt_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      notes: notes || {},
-    };
-
-    const order = await razorpay.orders.create(options);
-
-    return res.json({
-      success: true,
-      order,
-      key_id: process.env.RAZORPAY_KEY_ID,
-    });
-  } catch (error: any) {
-    console.error("Razorpay order creation error:", error);
-    return res.status(500).json({
-      error: error.message || "Failed to create Razorpay order",
-    });
-  }
-});
-
-// POST /api/razorpay/verify-payment
-app.post(["/api/razorpay/verify-payment", "/razorpay/verify-payment"], async (req, res) => {
-  try {
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      customer,
-      items,
-      totalAmount,
-    } = req.body || {};
-
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.status(400).json({
-        success: false,
-        verified: false,
-        error: "Missing required parameters: razorpay_order_id, razorpay_payment_id, or razorpay_signature",
-      });
-    }
-
-    const key_secret = process.env.RAZORPAY_KEY_SECRET;
-    if (!key_secret) {
-      return res.status(500).json({
-        success: false,
-        verified: false,
-        error: "RAZORPAY_KEY_SECRET environment variable is not configured",
-      });
-    }
-
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac("sha256", key_secret)
-      .update(body.toString())
-      .digest("hex");
-
-    const isVerified = expectedSignature === razorpay_signature;
-
-    if (isVerified) {
-      // Save verified order to existing Firebase Firestore "orders" collection
-      const orderDocument = {
-        customer: customer || {},
-        items: items || [],
-        totalAmount: typeof totalAmount === "number" ? totalAmount : 0,
-        razorpayOrderId: razorpay_order_id,
-        razorpayPaymentId: razorpay_payment_id,
-        status: "paid",
-        createdAt: new Date().toISOString(),
+      const options = {
+        amount: amountInPaise,
+        currency: currency || "INR",
+        receipt: receipt || `receipt_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        notes: notes || {},
       };
 
-      try {
-        await setDoc(doc(db, "orders", razorpay_order_id), orderDocument);
-      } catch (dbErr: any) {
-        console.error("Error saving verified order to Firestore:", dbErr);
-      }
+      const order = await razorpay.orders.create(options);
 
       return res.json({
         success: true,
-        verified: true,
-        message: "Payment signature verified and order saved successfully",
-        paymentId: razorpay_payment_id,
-        orderId: razorpay_order_id,
+        order,
+        key_id: process.env.RAZORPAY_KEY_ID,
       });
-    } else {
-      return res.status(400).json({
-        success: false,
-        verified: false,
-        error: "Invalid payment signature verification failed",
+    } catch (error: any) {
+      console.error("Razorpay order creation error:", error);
+      return res.status(500).json({
+        error: error.message || "Failed to create Razorpay order",
       });
     }
-  } catch (error: any) {
-    console.error("Razorpay payment verification error:", error);
-    return res.status(500).json({
-      success: false,
-      verified: false,
-      error: error.message || "Failed to verify Razorpay payment",
-    });
   }
+);
+
+// POST /api/razorpay/verify-payment
+app.post(
+  ["/api/razorpay/verify-payment", "/razorpay/verify-payment", "*/verify-payment"],
+  async (req, res) => {
+    try {
+      const {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+        customer,
+        items,
+        totalAmount,
+      } = req.body || {};
+
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return res.status(400).json({
+          success: false,
+          verified: false,
+          error: "Missing required parameters: razorpay_order_id, razorpay_payment_id, or razorpay_signature",
+        });
+      }
+
+      const key_secret = process.env.RAZORPAY_KEY_SECRET;
+      if (!key_secret) {
+        return res.status(500).json({
+          success: false,
+          verified: false,
+          error: "RAZORPAY_KEY_SECRET environment variable is not configured",
+        });
+      }
+
+      const body = razorpay_order_id + "|" + razorpay_payment_id;
+      const expectedSignature = crypto
+        .createHmac("sha256", key_secret)
+        .update(body.toString())
+        .digest("hex");
+
+      const isVerified = expectedSignature === razorpay_signature;
+
+      if (isVerified) {
+        // Save verified order to existing Firebase Firestore "orders" collection
+        const orderDocument = {
+          customer: customer || {},
+          items: items || [],
+          totalAmount: typeof totalAmount === "number" ? totalAmount : 0,
+          razorpayOrderId: razorpay_order_id,
+          razorpayPaymentId: razorpay_payment_id,
+          status: "paid",
+          createdAt: new Date().toISOString(),
+        };
+
+        try {
+          await setDoc(doc(db, "orders", razorpay_order_id), orderDocument);
+        } catch (dbErr: any) {
+          console.error("Error saving verified order to Firestore:", dbErr);
+        }
+
+        return res.json({
+          success: true,
+          verified: true,
+          message: "Payment signature verified and order saved successfully",
+          paymentId: razorpay_payment_id,
+          orderId: razorpay_order_id,
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          verified: false,
+          error: "Invalid payment signature verification failed",
+        });
+      }
+    } catch (error: any) {
+      console.error("Razorpay payment verification error:", error);
+      return res.status(500).json({
+        success: false,
+        verified: false,
+        error: error.message || "Failed to verify Razorpay payment",
+      });
+    }
+  }
+);
+
+// Fallback JSON 404 handler for unmatched API routes
+app.use("/api/*", (req, res) => {
+  res.status(404).json({
+    error: `API route not found: ${req.method} ${req.originalUrl || req.url}`,
+  });
 });
 
 export default app;
