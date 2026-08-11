@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import dotenv from "dotenv";
@@ -20,6 +19,19 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Safely parse JSON body if passed as raw string in Vercel serverless environment
+app.use((req, res, next) => {
+  if (typeof req.body === "string" && req.body.length > 0) {
+    try {
+      req.body = JSON.parse(req.body);
+    } catch (e) {
+      // Keep original req.body if not JSON
+    }
+  }
+  next();
+});
 
 function getRazorpayInstance() {
   const key_id = process.env.RAZORPAY_KEY_ID;
@@ -163,10 +175,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// Express global JSON error handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("Express server error:", err);
+  res.status(500).json({
+    error: err?.message || "Internal Server Error",
+  });
+});
+
 export default app;
 
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
