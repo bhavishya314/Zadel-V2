@@ -31,7 +31,7 @@ function getRazorpayInstance() {
 }
 
 // POST /api/razorpay/create-order
-app.post("/api/razorpay/create-order", async (req, res) => {
+app.post(["/api/razorpay/create-order", "/razorpay/create-order"], async (req, res) => {
   try {
     const { amount, currency = "INR", receipt, notes } = req.body || {};
 
@@ -69,7 +69,7 @@ app.post("/api/razorpay/create-order", async (req, res) => {
 });
 
 // POST /api/razorpay/verify-payment
-app.post("/api/razorpay/verify-payment", async (req, res) => {
+app.post(["/api/razorpay/verify-payment", "/razorpay/verify-payment"], async (req, res) => {
   try {
     const {
       razorpay_order_id,
@@ -147,6 +147,8 @@ app.post("/api/razorpay/verify-payment", async (req, res) => {
   }
 });
 
+export default app;
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -167,4 +169,6 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
