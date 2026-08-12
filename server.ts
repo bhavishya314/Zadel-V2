@@ -23,6 +23,19 @@ try {
   }
 }
 
+if (!firebaseConfig || !firebaseConfig.projectId) {
+  firebaseConfig = {
+    apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || firebaseConfig.apiKey,
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || firebaseConfig.projectId,
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
+    messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId,
+    appId: process.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID || firebaseConfig.appId,
+    measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || process.env.FIREBASE_MEASUREMENT_ID || firebaseConfig.measurementId,
+    firestoreDatabaseId: process.env.VITE_FIREBASE_DATABASE_ID || process.env.FIREBASE_DATABASE_ID || firebaseConfig.firestoreDatabaseId || "(default)",
+  };
+}
+
 let dbInstance: any = null;
 function getDb() {
   if (!dbInstance) {
@@ -60,9 +73,26 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware 2: Safe Body Parser for Vercel Serverless & Standard Node
+// Middleware 2: Vercel URL restoration & Safe Body Parser
 app.use((req, res, next) => {
-  // If request body was already parsed by Vercel serverless environment
+  // Restore original path if rewritten by Vercel serverless layer
+  const originalPath =
+    (req.headers["x-matched-path"] as string) ||
+    (req.headers["x-rewrite-url"] as string) ||
+    req.originalUrl;
+
+  if (
+    originalPath &&
+    originalPath !== req.url &&
+    !req.url.includes("create-order") &&
+    !req.url.includes("verify-payment")
+  ) {
+    if (req.url.startsWith("/api/index") || req.url === "/api" || req.url === "/api/") {
+      req.url = originalPath;
+    }
+  }
+
+  // Handle request body
   if (req.body !== undefined && req.body !== null) {
     if (Buffer.isBuffer(req.body)) {
       try {
@@ -100,12 +130,13 @@ function getRazorpayInstance() {
 
 // POST /api/razorpay/create-order
 app.post(
-  ["/api/razorpay/create-order", "/razorpay/create-order", "/create-order", /\/create-order$/],
+  ["/api/razorpay/create-order", "/razorpay/create-order", "/create-order", /\/create-order(\/|\?|$)/],
   async (req, res) => {
     try {
-      const { amount, currency = "INR", receipt, notes } = req.body || {};
+      const { amount: rawAmount, currency = "INR", receipt, notes } = req.body || {};
+      const amount = typeof rawAmount === "string" ? parseFloat(rawAmount) : rawAmount;
 
-      if (!amount || typeof amount !== "number" || amount <= 0) {
+      if (amount === undefined || amount === null || typeof amount !== "number" || isNaN(amount) || amount <= 0) {
         return res.status(400).json({
           error: "Invalid amount. 'amount' is required and must be a positive number.",
         });
