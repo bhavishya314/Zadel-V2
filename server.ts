@@ -119,13 +119,47 @@ app.use((req, res, next) => {
   });
 });
 
+function getRazorpayCredentials() {
+  const rawKeyId =
+    process.env.RAZORPAY_KEY_ID ||
+    process.env.VITE_RAZORPAY_KEY_ID ||
+    process.env.RAZORPAY_API_KEY ||
+    process.env.VITE_RAZORPAY_API_KEY ||
+    "";
+
+  const rawKeySecret =
+    process.env.RAZORPAY_KEY_SECRET ||
+    process.env.VITE_RAZORPAY_KEY_SECRET ||
+    process.env.RAZORPAY_SECRET_KEY ||
+    process.env.RAZORPAY_SECRET ||
+    process.env.VITE_RAZORPAY_SECRET_KEY ||
+    "";
+
+  const clean = (val: string) => {
+    if (!val) return "";
+    let s = val.trim();
+    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+      s = s.slice(1, -1).trim();
+    }
+    return s;
+  };
+
+  const key_id = clean(rawKeyId);
+  const key_secret = clean(rawKeySecret);
+
+  return { key_id, key_secret };
+}
+
 function getRazorpayInstance() {
-  const key_id = process.env.RAZORPAY_KEY_ID;
-  const key_secret = process.env.RAZORPAY_KEY_SECRET;
+  const { key_id, key_secret } = getRazorpayCredentials();
   if (!key_id || !key_secret) {
     throw new Error("RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables are required.");
   }
-  return new Razorpay({ key_id, key_secret });
+  return {
+    instance: new Razorpay({ key_id, key_secret }),
+    key_id,
+    key_secret,
+  };
 }
 
 // POST /api/razorpay/create-order
@@ -145,7 +179,7 @@ app.post(
       // Convert amount to paise (1 INR = 100 paise)
       const amountInPaise = Math.round(amount * 100);
 
-      const razorpay = getRazorpayInstance();
+      const { instance: razorpay, key_id } = getRazorpayInstance();
 
       const options = {
         amount: amountInPaise,
@@ -159,7 +193,7 @@ app.post(
       return res.json({
         success: true,
         order,
-        key_id: process.env.RAZORPAY_KEY_ID,
+        key_id,
       });
     } catch (error: any) {
       console.error("Razorpay order creation error:", error);
@@ -192,7 +226,7 @@ app.post(
         });
       }
 
-      const key_secret = process.env.RAZORPAY_KEY_SECRET;
+      const { key_secret } = getRazorpayCredentials();
       if (!key_secret) {
         return res.status(500).json({
           success: false,
