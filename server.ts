@@ -3,21 +3,39 @@ import path from "path";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import { createRequire } from "module";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
-import firebaseConfig from "./firebase-applet-config.json";
 
 dotenv.config();
+
+const require = createRequire(import.meta.url);
+let firebaseConfig: any = {};
+try {
+  firebaseConfig = require("./firebase-applet-config.json");
+} catch (e) {
+  try {
+    if (process.env.FIREBASE_CONFIG) {
+      firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
+    }
+  } catch (err) {
+    console.error("Failed to parse FIREBASE_CONFIG env var:", err);
+  }
+}
 
 let dbInstance: any = null;
 function getDb() {
   if (!dbInstance) {
     try {
+      if (!firebaseConfig || !firebaseConfig.projectId) {
+        console.warn("Firebase configuration is missing or incomplete.");
+        return null;
+      }
       const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
       const firestoreDbId =
-        (firebaseConfig as any).firestoreDatabaseId &&
-        (firebaseConfig as any).firestoreDatabaseId !== "(default)"
-          ? (firebaseConfig as any).firestoreDatabaseId
+        firebaseConfig.firestoreDatabaseId &&
+        firebaseConfig.firestoreDatabaseId !== "(default)"
+          ? firebaseConfig.firestoreDatabaseId
           : undefined;
       dbInstance = getFirestore(firebaseApp, firestoreDbId);
     } catch (e) {
