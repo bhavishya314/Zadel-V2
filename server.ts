@@ -46,7 +46,13 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   // If request body was already parsed by Vercel serverless environment
   if (req.body !== undefined && req.body !== null) {
-    if (typeof req.body === "string" && req.body.length > 0) {
+    if (Buffer.isBuffer(req.body)) {
+      try {
+        req.body = JSON.parse(req.body.toString("utf-8"));
+      } catch (e) {
+        // Keep original if not JSON
+      }
+    } else if (typeof req.body === "string" && req.body.length > 0) {
       try {
         req.body = JSON.parse(req.body);
       } catch (e) {
@@ -76,7 +82,7 @@ function getRazorpayInstance() {
 
 // POST /api/razorpay/create-order
 app.post(
-  ["/api/razorpay/create-order", "/razorpay/create-order", "/create-order", "*/create-order"],
+  ["/api/razorpay/create-order", "/razorpay/create-order", "/create-order", /\/create-order$/],
   async (req, res) => {
     try {
       const { amount, currency = "INR", receipt, notes } = req.body || {};
@@ -117,7 +123,7 @@ app.post(
 
 // POST /api/razorpay/verify-payment
 app.post(
-  ["/api/razorpay/verify-payment", "/razorpay/verify-payment", "/verify-payment", "*/verify-payment"],
+  ["/api/razorpay/verify-payment", "/razorpay/verify-payment", "/verify-payment", /\/verify-payment$/],
   async (req, res) => {
     try {
       const {
@@ -202,7 +208,13 @@ app.post(
 
 // Fallback JSON 404 handler for unmatched API routes
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api") || req.path.startsWith("/razorpay")) {
+  if (
+    process.env.VERCEL ||
+    req.path.startsWith("/api") ||
+    req.path.startsWith("/razorpay") ||
+    req.path.includes("create-order") ||
+    req.path.includes("verify-payment")
+  ) {
     return res.status(404).json({
       error: `API route not found: ${req.method} ${req.originalUrl || req.url}`,
     });
