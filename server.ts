@@ -9,28 +9,60 @@ import firebaseConfig from "./firebase-applet-config.json";
 
 dotenv.config();
 
-const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const firestoreDbId = (firebaseConfig as any).firestoreDatabaseId && (firebaseConfig as any).firestoreDatabaseId !== "(default)"
-  ? (firebaseConfig as any).firestoreDatabaseId
-  : undefined;
-const db = getFirestore(firebaseApp, firestoreDbId);
+let dbInstance: any = null;
+function getDb() {
+  if (!dbInstance) {
+    try {
+      const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+      const firestoreDbId =
+        (firebaseConfig as any).firestoreDatabaseId &&
+        (firebaseConfig as any).firestoreDatabaseId !== "(default)"
+          ? (firebaseConfig as any).firestoreDatabaseId
+          : undefined;
+      dbInstance = getFirestore(firebaseApp, firestoreDbId);
+    } catch (e) {
+      console.error("Firestore initialization error:", e);
+    }
+  }
+  return dbInstance;
+}
 
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Safely parse JSON body if passed as raw string in Vercel serverless environment
+// Middleware 1: CORS & Preflight handling
 app.use((req, res, next) => {
-  if (typeof req.body === "string" && req.body.length > 0) {
-    try {
-      req.body = JSON.parse(req.body);
-    } catch (e) {
-      // Keep original req.body if not JSON
-    }
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
   }
   next();
+});
+
+// Middleware 2: Safe Body Parser for Vercel Serverless & Standard Node
+app.use((req, res, next) => {
+  // If request body was already parsed by Vercel serverless environment
+  if (req.body !== undefined && req.body !== null) {
+    if (typeof req.body === "string" && req.body.length > 0) {
+      try {
+        req.body = JSON.parse(req.body);
+      } catch (e) {
+        // Keep original string if not valid JSON
+      }
+    }
+    return next();
+  }
+
+  // Fallback to express.json() for local/traditional Node environment
+  express.json()(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: "Invalid JSON body payload" });
+    }
+    express.urlencoded({ extended: true })(req, res, next);
+  });
 });
 
 function getRazorpayInstance() {
@@ -44,7 +76,7 @@ function getRazorpayInstance() {
 
 // POST /api/razorpay/create-order
 app.post(
-  ["/api/razorpay/create-order", "/razorpay/create-order", "*/create-order"],
+  ["/api/razorpay/create-order", "/razorpay/create-order", "/create-order", "*/create-order"],
   async (req, res) => {
     try {
       const { amount, currency = "INR", receipt, notes } = req.body || {};
@@ -85,7 +117,7 @@ app.post(
 
 // POST /api/razorpay/verify-payment
 app.post(
-  ["/api/razorpay/verify-payment", "/razorpay/verify-payment", "*/verify-payment"],
+  ["/api/razorpay/verify-payment", "/razorpay/verify-payment", "/verify-payment", "*/verify-payment"],
   async (req, res) => {
     try {
       const {
@@ -135,7 +167,10 @@ app.post(
         };
 
         try {
-          await setDoc(doc(db, "orders", razorpay_order_id), orderDocument);
+          const db = getDb();
+          if (db) {
+            await setDoc(doc(db, "orders", razorpay_order_id), orderDocument);
+          }
         } catch (dbErr: any) {
           console.error("Error saving verified order to Firestore:", dbErr);
         }
@@ -167,7 +202,7 @@ app.post(
 
 // Fallback JSON 404 handler for unmatched API routes
 app.use((req, res, next) => {
-  if (req.path.startsWith("/api") || process.env.VERCEL) {
+  if (req.path.startsWith("/api") || req.path.startsWith("/razorpay")) {
     return res.status(404).json({
       error: `API route not found: ${req.method} ${req.originalUrl || req.url}`,
     });
