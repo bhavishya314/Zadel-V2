@@ -3,9 +3,9 @@ import path from "path";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import { createRequire } from "module";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
+import firebaseConfigRaw from "./firebase-applet-config.json";
 
 try {
   dotenv.config();
@@ -13,11 +13,8 @@ try {
   // Ignore in environments where .env is not present
 }
 
-const require = createRequire(import.meta.url);
-let firebaseConfig: any = {};
-try {
-  firebaseConfig = require("./firebase-applet-config.json");
-} catch (e) {
+let firebaseConfig: any = firebaseConfigRaw || {};
+if (!firebaseConfig || !firebaseConfig.projectId) {
   try {
     if (process.env.FIREBASE_CONFIG) {
       firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
