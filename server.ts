@@ -87,13 +87,9 @@ app.use((req, res, next) => {
 
   if (
     originalPath &&
-    originalPath !== req.url &&
-    !req.url.includes("create-order") &&
-    !req.url.includes("verify-payment")
+    (req.url === "/api" || req.url === "/api/" || req.url.startsWith("/api/index"))
   ) {
-    if (req.url.startsWith("/api/index") || req.url === "/api" || req.url === "/api/") {
-      req.url = originalPath;
-    }
+    req.url = originalPath;
   }
 
   // Handle request body
@@ -124,36 +120,7 @@ app.use((req, res, next) => {
 });
 
 function getRazorpayCredentials() {
-  const env = (typeof process !== "undefined" && process.env) ? process.env : {};
-
-  let rawKeyId =
-    env["RAZORPAY_KEY_ID"] ||
-    env["VITE_RAZORPAY_KEY_ID"] ||
-    env["RAZORPAY_API_KEY"] ||
-    env["VITE_RAZORPAY_API_KEY"] ||
-    "";
-
-  let rawKeySecret =
-    env["RAZORPAY_KEY_SECRET"] ||
-    env["VITE_RAZORPAY_KEY_SECRET"] ||
-    env["RAZORPAY_SECRET_KEY"] ||
-    env["RAZORPAY_SECRET"] ||
-    env["VITE_RAZORPAY_SECRET_KEY"] ||
-    "";
-
-  if (!rawKeyId || !rawKeySecret) {
-    for (const key of Object.keys(env)) {
-      const lower = key.toLowerCase();
-      if (!rawKeyId && (lower === "razorpay_key_id" || lower === "razorpay_id" || lower === "razorpay_api_key")) {
-        rawKeyId = env[key] || "";
-      }
-      if (!rawKeySecret && (lower === "razorpay_key_secret" || lower === "razorpay_secret_key" || lower === "razorpay_secret")) {
-        rawKeySecret = env[key] || "";
-      }
-    }
-  }
-
-  const clean = (val: any) => {
+  const clean = (val?: string) => {
     if (!val || typeof val !== "string") return "";
     let s = val.trim();
     if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
@@ -162,10 +129,21 @@ function getRazorpayCredentials() {
     return s;
   };
 
-  return {
-    key_id: clean(rawKeyId),
-    key_secret: clean(rawKeySecret),
-  };
+  const key_id = clean(
+    process.env.RAZORPAY_KEY_ID ||
+    process.env.VITE_RAZORPAY_KEY_ID ||
+    process.env.RAZORPAY_API_KEY ||
+    process.env.VITE_RAZORPAY_API_KEY
+  );
+
+  const key_secret = clean(
+    process.env.RAZORPAY_KEY_SECRET ||
+    process.env.VITE_RAZORPAY_KEY_SECRET ||
+    process.env.RAZORPAY_SECRET_KEY ||
+    process.env.RAZORPAY_SECRET
+  );
+
+  return { key_id, key_secret };
 }
 
 function getRazorpayInstance() {
