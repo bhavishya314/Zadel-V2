@@ -120,28 +120,8 @@ app.use((req, res, next) => {
 });
 
 function getRazorpayCredentials() {
-  const clean = (val?: string) => {
-    if (!val || typeof val !== "string") return "";
-    let s = val.trim();
-    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
-      s = s.slice(1, -1).trim();
-    }
-    return s;
-  };
-
-  const key_id = clean(
-    process.env.RAZORPAY_KEY_ID ||
-    process.env.VITE_RAZORPAY_KEY_ID ||
-    process.env.RAZORPAY_API_KEY ||
-    process.env.VITE_RAZORPAY_API_KEY
-  );
-
-  const key_secret = clean(
-    process.env.RAZORPAY_KEY_SECRET ||
-    process.env.VITE_RAZORPAY_KEY_SECRET ||
-    process.env.RAZORPAY_SECRET_KEY ||
-    process.env.RAZORPAY_SECRET
-  );
+  const key_id = (process.env.RAZORPAY_KEY_ID || "").trim();
+  const key_secret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 
   return { key_id, key_secret };
 }

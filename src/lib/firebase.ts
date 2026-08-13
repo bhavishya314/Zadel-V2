@@ -1,6 +1,15 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { initializeFirestore, getFirestore, doc, getDoc, setDoc, getDocFromServer } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  getFirestore,
+  memoryLocalCache,
+  memoryLruGarbageCollector,
+  doc,
+  getDoc,
+  setDoc,
+  getDocFromServer,
+} from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import firebaseConfig from '../../firebase-applet-config.json' with { type: 'json' };
 import {
@@ -30,9 +39,14 @@ const databaseId = configToUse.firestoreDatabaseId && configToUse.firestoreDatab
 
 export const db = (() => {
   try {
-    return initializeFirestore(app, {
-      experimentalAutoDetectLongPolling: true,
-    }, databaseId);
+    return initializeFirestore(
+      app,
+      {
+        localCache: memoryLocalCache({ garbageCollector: memoryLruGarbageCollector() }),
+        experimentalAutoDetectLongPolling: true,
+      },
+      databaseId
+    );
   } catch {
     return getFirestore(app, databaseId);
   }
@@ -69,9 +83,19 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): void {
+  const errStr = error instanceof Error ? error.message : String(error);
+  // Gracefully filter out harmless tab close or IndexedDB closing/hidden browser lifecycle messages
+  if (
+    errStr.toLowerCase().includes('closing') ||
+    errStr.toLowerCase().includes('hidden') ||
+    errStr.toLowerCase().includes('closed')
+  ) {
+    return;
+  }
+
   const currentUser = auth.currentUser;
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errStr,
     authInfo: {
       userId: currentUser?.uid,
       email: currentUser?.email,
@@ -93,8 +117,11 @@ async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'system', 'admin_config'));
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
+    if (error instanceof Error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes('offline') || msg.includes('closing') || msg.includes('hidden')) {
+        console.warn('Firebase connection notice:', error.message);
+      }
     }
   }
 }
