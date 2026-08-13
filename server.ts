@@ -7,7 +7,11 @@ import { createRequire } from "module";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 
-dotenv.config();
+try {
+  dotenv.config();
+} catch (e) {
+  // Ignore in environments where .env is not present
+}
 
 const require = createRequire(import.meta.url);
 let firebaseConfig: any = {};
@@ -120,23 +124,37 @@ app.use((req, res, next) => {
 });
 
 function getRazorpayCredentials() {
-  const rawKeyId =
-    process.env.RAZORPAY_KEY_ID ||
-    process.env.VITE_RAZORPAY_KEY_ID ||
-    process.env.RAZORPAY_API_KEY ||
-    process.env.VITE_RAZORPAY_API_KEY ||
+  const env = (typeof process !== "undefined" && process.env) ? process.env : {};
+
+  let rawKeyId =
+    env["RAZORPAY_KEY_ID"] ||
+    env["VITE_RAZORPAY_KEY_ID"] ||
+    env["RAZORPAY_API_KEY"] ||
+    env["VITE_RAZORPAY_API_KEY"] ||
     "";
 
-  const rawKeySecret =
-    process.env.RAZORPAY_KEY_SECRET ||
-    process.env.VITE_RAZORPAY_KEY_SECRET ||
-    process.env.RAZORPAY_SECRET_KEY ||
-    process.env.RAZORPAY_SECRET ||
-    process.env.VITE_RAZORPAY_SECRET_KEY ||
+  let rawKeySecret =
+    env["RAZORPAY_KEY_SECRET"] ||
+    env["VITE_RAZORPAY_KEY_SECRET"] ||
+    env["RAZORPAY_SECRET_KEY"] ||
+    env["RAZORPAY_SECRET"] ||
+    env["VITE_RAZORPAY_SECRET_KEY"] ||
     "";
 
-  const clean = (val: string) => {
-    if (!val) return "";
+  if (!rawKeyId || !rawKeySecret) {
+    for (const key of Object.keys(env)) {
+      const lower = key.toLowerCase();
+      if (!rawKeyId && (lower === "razorpay_key_id" || lower === "razorpay_id" || lower === "razorpay_api_key")) {
+        rawKeyId = env[key] || "";
+      }
+      if (!rawKeySecret && (lower === "razorpay_key_secret" || lower === "razorpay_secret_key" || lower === "razorpay_secret")) {
+        rawKeySecret = env[key] || "";
+      }
+    }
+  }
+
+  const clean = (val: any) => {
+    if (!val || typeof val !== "string") return "";
     let s = val.trim();
     if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
       s = s.slice(1, -1).trim();
@@ -144,10 +162,10 @@ function getRazorpayCredentials() {
     return s;
   };
 
-  const key_id = clean(rawKeyId);
-  const key_secret = clean(rawKeySecret);
-
-  return { key_id, key_secret };
+  return {
+    key_id: clean(rawKeyId),
+    key_secret: clean(rawKeySecret),
+  };
 }
 
 function getRazorpayInstance() {
