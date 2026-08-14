@@ -24,6 +24,7 @@ export default function Header() {
   } = useStore();
   const { theme, toggleTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
+  const [heroInView, setHeroInView] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [brandName, setBrandName] = useState('ZADEL');
   const [brandLogo, setBrandLogo] = useState('');
@@ -41,7 +42,11 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    const onScroll = () => {
+      const scrollY = window.scrollY;
+      setScrolled(scrollY > 24);
+      setHeroInView(scrollY < 380);
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -58,23 +63,23 @@ export default function Header() {
     };
   }, [mobileOpen]);
 
-  const solidHeader = scrolled || mobileOpen || theme === 'light';
+  const isOverDarkHero = theme === 'dark' || (location.pathname === '/' && heroInView);
 
   return (
     <motion.header
       variants={navFade}
       initial="hidden"
       animate="visible"
-      className={`theme-surface fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-        solidHeader
-          ? 'border-b border-foreground/5 bg-zadel-black/95 backdrop-blur-md'
-          : 'bg-transparent'
-      }`}
+      className="fixed inset-x-0 top-0 z-50 bg-transparent transition-colors duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 md:h-20 md:px-8">
         <button
           type="button"
-          className="icon-btn flex h-10 w-10 items-center justify-center text-foreground/80 hover:text-zadel-gold md:hidden"
+          className={`icon-btn flex h-10 w-10 items-center justify-center transition-colors duration-300 md:hidden ${
+            isOverDarkHero
+              ? 'text-white/90 hover:text-zadel-gold drop-shadow-sm'
+              : 'text-foreground/80 hover:text-zadel-gold'
+          }`}
           onClick={() => setMobileOpen((v) => !v)}
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
         >
@@ -102,7 +107,11 @@ export default function Header() {
               end={link.to === '/'}
               className={({ isActive }) =>
                 `text-[11px] font-medium tracking-[0.22em] uppercase transition-colors duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                  isActive ? 'text-zadel-gold' : 'text-foreground/70 hover:text-foreground'
+                  isActive
+                    ? 'text-zadel-gold font-semibold drop-shadow-sm'
+                    : isOverDarkHero
+                    ? 'text-white/90 hover:text-white drop-shadow-sm'
+                    : 'text-foreground/75 hover:text-foreground'
                 }`
               }
             >
@@ -116,7 +125,7 @@ export default function Header() {
           to="/"
           className="flex items-center justify-center transition-opacity hover:opacity-85 my-auto"
         >
-          {brandLogo && (
+          {brandLogo ? (
             <img
               src={getOptimizedImageUrl(brandLogo, { width: 300 })}
               alt={brandName}
@@ -124,6 +133,14 @@ export default function Header() {
               fetchPriority="high"
               className="h-7 md:h-9 max-w-[140px] md:max-w-[200px] object-contain"
             />
+          ) : (
+            <span
+              className={`font-display text-xl md:text-2xl font-bold tracking-[0.2em] transition-colors duration-300 ${
+                isOverDarkHero ? 'text-white drop-shadow-sm' : 'text-foreground'
+              }`}
+            >
+              {brandName}
+            </span>
           )}
         </Link>
 
@@ -131,7 +148,11 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
-            className="icon-btn flex h-10 w-10 items-center justify-center text-foreground/75 hover:text-zadel-gold"
+            className={`icon-btn flex h-10 w-10 items-center justify-center transition-colors duration-300 ${
+              isOverDarkHero
+                ? 'text-white/90 hover:text-zadel-gold drop-shadow-sm'
+                : 'text-foreground/75 hover:text-zadel-gold'
+            }`}
             aria-label="Search"
           >
             <Search size={18} strokeWidth={1.5} />
@@ -140,7 +161,11 @@ export default function Header() {
           <button
             type="button"
             onClick={toggleTheme}
-            className="icon-btn hidden h-10 w-10 items-center justify-center text-foreground/75 hover:text-zadel-gold md:flex"
+            className={`icon-btn hidden h-10 w-10 items-center justify-center transition-colors duration-300 md:flex ${
+              isOverDarkHero
+                ? 'text-white/90 hover:text-zadel-gold drop-shadow-sm'
+                : 'text-foreground/75 hover:text-zadel-gold'
+            }`}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -164,7 +189,11 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setWishlistOpen(true)}
-            className="icon-btn relative flex h-10 w-10 items-center justify-center text-foreground/75 hover:text-zadel-gold"
+            className={`icon-btn relative flex h-10 w-10 items-center justify-center transition-colors duration-300 ${
+              isOverDarkHero
+                ? 'text-white/90 hover:text-zadel-gold drop-shadow-sm'
+                : 'text-foreground/75 hover:text-zadel-gold'
+            }`}
             aria-label="Wishlist"
           >
             <Heart size={18} strokeWidth={1.5} />
@@ -186,7 +215,11 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setCartOpen(true)}
-            className="icon-btn relative flex h-10 w-10 items-center justify-center text-foreground/75 hover:text-zadel-gold"
+            className={`icon-btn relative flex h-10 w-10 items-center justify-center transition-colors duration-300 ${
+              isOverDarkHero
+                ? 'text-white/90 hover:text-zadel-gold drop-shadow-sm'
+                : 'text-foreground/75 hover:text-zadel-gold'
+            }`}
             aria-label="Cart"
           >
             <ShoppingBag size={18} strokeWidth={1.5} />
