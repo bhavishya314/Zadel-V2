@@ -1208,9 +1208,9 @@ export default function AdminProducts() {
               </div>
 
               {/* Product Pricing Structure */}
-              <div className="p-3.5 rounded-xl border border-neutral-800 bg-neutral-950/80 space-y-3">
-                <div className="flex items-center justify-between border-b border-neutral-800/80 pb-2">
-                  <span className="font-semibold text-neutral-200 text-xs flex items-center gap-1.5">
+              <div className="p-3.5 rounded-xl border border-[#e8e2d8] bg-[#faf8f5] dark:border-neutral-800 dark:bg-neutral-950/80 space-y-3">
+                <div className="flex items-center justify-between border-b border-[#e8e2d8] dark:border-neutral-800/80 pb-2">
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-200 text-xs flex items-center gap-1.5">
                     <IndianRupee className="h-4 w-4 text-zadel-gold" />
                     Product Pricing Structure
                   </span>
@@ -1222,7 +1222,7 @@ export default function AdminProducts() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {/* Actual MRP */}
                   <div>
-                    <label className="block mb-1 font-medium text-neutral-300 text-[11px]">
+                    <label className="block mb-1 font-medium text-neutral-700 dark:text-neutral-300 text-[11px]">
                       Actual MRP (₹) *
                     </label>
                     <input
@@ -1233,13 +1233,13 @@ export default function AdminProducts() {
                       value={formMrp}
                       onChange={(e) => setFormMrp(Math.max(0, Number(e.target.value) || 0))}
                       placeholder="e.g. 5999"
-                      className="w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-200 focus:border-zadel-gold focus:outline-none font-mono"
+                      className="w-full rounded-lg border border-[#e2dcd2] bg-white dark:border-neutral-800 dark:bg-neutral-900 px-3 py-2 text-neutral-900 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-600 focus:border-zadel-gold focus:outline-none font-mono"
                     />
                   </div>
 
                   {/* Store Selling Price */}
                   <div>
-                    <label className="block mb-1 font-medium text-neutral-300 text-[11px]">
+                    <label className="block mb-1 font-medium text-neutral-700 dark:text-neutral-300 text-[11px]">
                       Store Selling Price (₹) *
                     </label>
                     <input
@@ -1250,26 +1250,26 @@ export default function AdminProducts() {
                       value={formPrice}
                       onChange={(e) => setFormPrice(Math.max(0, Number(e.target.value) || 0))}
                       placeholder="e.g. 4999"
-                      className={`w-full rounded-lg border bg-neutral-900 px-3 py-2 text-neutral-200 focus:outline-none font-mono ${
+                      className={`w-full rounded-lg border bg-white dark:bg-neutral-900 px-3 py-2 text-neutral-900 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none font-mono ${
                         formPrice > formMrp && formMrp > 0
                           ? 'border-rose-500/80 focus:border-rose-500'
-                          : 'border-neutral-800 focus:border-zadel-gold'
+                          : 'border-[#e2dcd2] dark:border-neutral-800 focus:border-zadel-gold'
                       }`}
                     />
                   </div>
 
                   {/* Auto-Calculated Discount % */}
                   <div>
-                    <label className="block mb-1 font-medium text-neutral-300 text-[11px]">
+                    <label className="block mb-1 font-medium text-neutral-700 dark:text-neutral-300 text-[11px]">
                       Discount %
                     </label>
-                    <div className="w-full rounded-lg border border-emerald-900/60 bg-emerald-950/40 px-3 py-2 flex items-center justify-between font-mono text-emerald-300">
+                    <div className="w-full rounded-lg border border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/40 px-3 py-2 flex items-center justify-between font-mono text-emerald-800 dark:text-emerald-300">
                       <span className="font-bold text-sm">
                         {formMrp > 0 && formPrice <= formMrp
                           ? `${Math.round(((formMrp - formPrice) / formMrp) * 100)}%`
                           : '0%'}
                       </span>
-                      <span className="text-[10px] text-emerald-400 bg-emerald-900/60 border border-emerald-700/60 px-1.5 py-0.5 rounded uppercase tracking-wider font-sans font-semibold">
+                      <span className="text-[10px] text-emerald-700 bg-emerald-100/90 border border-emerald-300/80 dark:text-emerald-400 dark:bg-emerald-900/60 dark:border-emerald-700/60 px-1.5 py-0.5 rounded uppercase tracking-wider font-sans font-semibold">
                         Auto
                       </span>
                     </div>
@@ -1277,19 +1277,19 @@ export default function AdminProducts() {
                 </div>
 
                 {/* Formula Breakdown & Summary */}
-                <div className="text-[11px] text-neutral-400 bg-neutral-900/90 border border-neutral-800/80 rounded-lg p-2.5 flex items-center justify-between">
+                <div className="text-[11px] text-neutral-600 dark:text-neutral-400 bg-white/90 dark:bg-neutral-900/90 border border-[#e8e2d8] dark:border-neutral-800/80 rounded-lg p-2.5 flex items-center justify-between">
                   <div className="space-y-0.5 w-full">
                     <div className="flex items-center gap-2">
-                      <span>MRP: <strong className="text-neutral-200">₹{formMrp.toLocaleString()}</strong></span>
+                      <span>MRP: <strong className="text-neutral-900 dark:text-neutral-200">₹{formMrp.toLocaleString()}</strong></span>
                       <span>→</span>
-                      <span>Store Price: <strong className="text-zadel-gold">₹{formPrice.toLocaleString()}</strong></span>
+                      <span>Store Price: <strong className="text-zadel-gold font-semibold">₹{formPrice.toLocaleString()}</strong></span>
                     </div>
                     {formMrp > 0 && formPrice < formMrp ? (
-                      <p className="text-emerald-400 text-[10px]">
+                      <p className="text-emerald-700 dark:text-emerald-400 text-[10px] font-medium">
                         Customer saves ₹{(formMrp - formPrice).toLocaleString()} ({Math.round(((formMrp - formPrice) / formMrp) * 100)}% discount applied)
                       </p>
                     ) : formMrp > 0 && formPrice > formMrp ? (
-                      <p className="text-rose-400 text-[10px] font-semibold">
+                      <p className="text-rose-600 dark:text-rose-400 text-[10px] font-semibold">
                         ❌ Store Selling Price cannot exceed Actual MRP (₹{formMrp.toLocaleString()}).
                       </p>
                     ) : (
