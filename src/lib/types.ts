@@ -158,30 +158,46 @@ export interface FirestoreAdminConfig {
   createdAt?: string;
 }
 
+export type OrderStatus =
+  | 'Pending'
+  | 'Approved'
+  | 'Not Approved'
+  | 'Completed'
+  | 'paid'
+  | string;
+
+export interface FirestoreOrderItem {
+  productId: string;
+  productName: string;
+  price: number;
+  quantity: number;
+  size: string;
+  image?: string;
+}
+
+export interface FirestoreOrderCustomer {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  pincode: string;
+}
+
 /**
  * Model for `orders` collection document in Firestore
  */
 export interface FirestoreOrder {
-  id?: string;
-  customer: {
-    fullName: string;
-    email: string;
-    phone: string;
-    address: string;
-    city: string;
-    pincode: string;
-  };
-  items: Array<{
-    productId: string;
-    productName: string;
-    price: number;
-    quantity: number;
-    size: string;
-    image?: string;
-  }>;
+  id: string;
+  customer: FirestoreOrderCustomer;
+  items: FirestoreOrderItem[];
   totalAmount: number;
-  razorpayOrderId: string;
-  razorpayPaymentId: string;
-  status: 'paid';
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  paymentStatus?: string;
+  status: OrderStatus;
+  orderStatus?: OrderStatus;
   createdAt: string;
+  updatedAt?: string;
 }
+

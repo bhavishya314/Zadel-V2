@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Sun,
   Moon,
+  ShoppingBag,
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -38,6 +39,7 @@ export default function AdminLayout() {
 
   const navItems = [
     { label: 'Dashboard', path: '/admin', end: true, icon: LayoutDashboard },
+    { label: 'Orders', path: '/admin/orders', icon: ShoppingBag },
     { label: 'Products', path: '/admin/products', icon: Package },
     { label: 'Categories', path: '/admin/categories', icon: Layers },
     { label: 'Hero Section', path: '/admin/hero', icon: Sparkles },

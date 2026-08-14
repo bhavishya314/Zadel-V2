@@ -14,6 +14,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminHero from './pages/admin/AdminHero';
 import AdminReviews from './pages/admin/AdminReviews';
+import AdminOrders from './pages/admin/AdminOrders';
 import AdminContact from './pages/admin/AdminContact';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -36,6 +37,7 @@ export default function App() {
                 }
               >
                 <Route index element={<AdminDashboard />} />
+                <Route path="orders" element={<AdminOrders />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="categories" element={<AdminCategories />} />
                 <Route path="hero" element={<AdminHero />} />

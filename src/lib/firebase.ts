@@ -234,3 +234,11 @@ export {
   subscribeToAllReviews,
 } from './reviewService';
 
+// Re-export Order Firestore service functions
+export {
+  subscribeToOrders,
+  updateOrderStatus,
+  deleteOrder,
+} from './orderService';
+
+
