@@ -1,15 +1,52 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Heart, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { formatINR } from '../lib/products';
-import { getPublishedProducts } from '../lib/productCatalog';
+import { subscribeToProducts } from '../lib/firebase';
+import type { Category, Product } from '../lib/types';
 import { getOptimizedImageUrl } from '../lib/cloudinary';
 import EmptyState from './EmptyState';
 
 export default function WishlistDrawer() {
   const { isWishlistOpen, setWishlistOpen, wishlist, toggleWishlist } = useStore();
-  const items = getPublishedProducts().filter((p) => wishlist.includes(p.id));
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToProducts((firestoreProducts) => {
+      if (firestoreProducts && firestoreProducts.length > 0) {
+        const mapped: Product[] = firestoreProducts
+          .filter((fp) => fp.published !== false)
+          .map((fp) => ({
+            id: fp.id,
+            name: fp.name,
+            price: fp.price,
+            originalPrice: fp.originalPrice,
+            discount: fp.discount,
+            category: fp.category as Category,
+            description: fp.description,
+            sizes: fp.sizes,
+            images: fp.images,
+            featured: Boolean(fp.featured),
+            bestSeller: Boolean(fp.bestSeller),
+            published: fp.published !== false,
+            createdAt: fp.createdAt,
+            updatedAt: fp.updatedAt,
+            tags: fp.tags,
+          }));
+        setProducts(mapped);
+      } else {
+        setProducts([]);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const items = products.filter((p) => wishlist.includes(p.id));
 
   return (
     <AnimatePresence>

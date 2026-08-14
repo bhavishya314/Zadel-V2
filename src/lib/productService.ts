@@ -313,17 +313,10 @@ export function subscribeToProducts(
   callback: (products: FirestoreProduct[]) => void
 ): Unsubscribe {
   const colRef = collection(db, PRODUCTS_COLLECTION);
-  let isSeeding = false;
 
   return onSnapshot(
     colRef,
-    async (snapshot) => {
-      if (snapshot.empty && !isSeeding) {
-        isSeeding = true;
-        await seedInitialProductsIfEmpty();
-        return;
-      }
-
+    (snapshot) => {
       const products: FirestoreProduct[] = [];
       snapshot.forEach((docSnap) => {
         products.push(parseProductDoc(docSnap.id, docSnap.data()));

@@ -10,7 +10,6 @@
  */
 
 import type { Category, Product } from './types';
-import { products as seedProducts } from './products';
 
 const ADMIN_PRODUCTS_KEY = 'zadel-admin-products';
 const PAGE_SIZE = 8;
@@ -61,21 +60,14 @@ function readAdminProducts(): Product[] {
 }
 
 /**
- * Full catalog merge: seed collection + admin-managed products.
- * Admin entries override seed products with the same id.
+ * Catalog products from local store (empty if no local overrides).
  */
 function getAllCatalogProducts(): Product[] {
-  const seed = seedProducts.map(normalizeProduct);
   const admin = typeof window !== 'undefined' ? readAdminProducts() : [];
-
-  const byId = new Map<string, Product>();
-  for (const p of seed) byId.set(p.id, p);
-  for (const p of admin) byId.set(p.id, normalizeProduct(p));
-
-  return Array.from(byId.values());
+  return admin.map(normalizeProduct);
 }
 
-/** Storefront-only: published products, unlimited length. */
+/** Storefront-only: published products. */
 export function getPublishedProducts(): Product[] {
   return getAllCatalogProducts().filter((p) => p.published !== false);
 }
@@ -131,8 +123,7 @@ export function applyFilters(
 }
 
 /**
- * Paginated shop query — does NOT load the entire catalog into the UI.
- * Replace internals with Firestore cursor pagination when admin is live.
+ * Paginated shop query — evaluates against provided live products.
  */
 export async function fetchShopPage(
   query: ShopQuery,
@@ -141,13 +132,10 @@ export async function fetchShopPage(
   const pageSize = query.pageSize ?? PAGE_SIZE;
   const page = Math.max(0, query.page);
 
-  // Simulate network latency for skeleton UX (lightweight)
-  await new Promise((r) => setTimeout(r, page === 0 ? 150 : 100));
+  // Lightweight debounce / skeleton transition
+  await new Promise((r) => setTimeout(r, page === 0 ? 80 : 50));
 
-  const baseProducts =
-    customProducts && customProducts.length > 0
-      ? customProducts
-      : getPublishedProducts();
+  const baseProducts = customProducts ?? getPublishedProducts();
 
   const filtered = applyFilters(baseProducts, query);
   const total = filtered.length;
@@ -165,24 +153,20 @@ export async function fetchShopPage(
   };
 }
 
-/** Single product lookup (published only for storefront). */
-export function getPublishedProductById(id: string): Product | undefined {
-  return getPublishedProducts().find((p) => p.id === id);
+/** Single product lookup (published only). */
+export function getPublishedProductById(id: string, pool?: Product[]): Product | undefined {
+  const source = pool ?? getPublishedProducts();
+  return source.find((p) => p.id === id);
 }
 
-/** Related products from the full published catalog (unlimited pool). */
-export function getRelatedPublishedProducts(product: Product, limit = 4): Product[] {
-  const pool = getPublishedProducts();
-  return pool
-    .filter((p) => p.id !== product.id && p.category === product.category)
-    .concat(pool.filter((p) => p.id !== product.id && p.category !== product.category))
-    .slice(0, limit);
+/** Related products calculated from provided live products pool (or current published). */
+export function getRelatedPublishedProducts(product: Product, pool: Product[] = [], limit = 4): Product[] {
+  const source = pool.filter((p) => p.published !== false && p.id !== product.id);
+  const sameCategory = source.filter((p) => p.category === product.category);
+  const otherCategories = source.filter((p) => p.category !== product.category);
+  return [...sameCategory, ...otherCategories].slice(0, limit);
 }
 
-/**
- * Admin helpers — ready for dashboard integration.
- * Writing here automatically surfaces on Shop (if published).
- */
 export function adminUpsertProduct(product: Product): Product {
   const next = normalizeProduct({
     ...product,
@@ -207,12 +191,8 @@ export function adminSetPublished(productId: string, published: boolean): void {
 
 export function adminDeleteProduct(productId: string): void {
   const admin = readAdminProducts().filter((p) => p.id !== productId);
-  // Tombstone seed products as unpublished via admin override
-  const seed = seedProducts.find((p) => p.id === productId);
-  if (seed) {
-    admin.push(normalizeProduct({ ...seed, published: false }));
-  }
   localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(admin));
 }
 
 export const SHOP_PAGE_SIZE = PAGE_SIZE;
+

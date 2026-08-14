@@ -45,9 +45,7 @@ export default function Shop() {
   const [canNextCategory, setCanNextCategory] = useState(false);
 
   /** All published products from Firestore / catalog */
-  const [allCatalogProducts, setAllCatalogProducts] = useState<Product[]>(() =>
-    getPublishedProducts()
-  );
+  const [allCatalogProducts, setAllCatalogProducts] = useState<Product[]>([]);
 
   /** Accumulated products from infinite scroll — no fixed cap */
   const [items, setItems] = useState<Product[]>([]);
@@ -83,6 +81,8 @@ export default function Shop() {
             tags: fp.tags,
           }));
         setAllCatalogProducts(mapped);
+      } else {
+        setAllCatalogProducts([]);
       }
     });
 

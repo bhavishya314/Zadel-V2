@@ -6,14 +6,13 @@ import ProductCard from '../components/ProductCard';
 import SectionHeading from '../components/SectionHeading';
 import CategoryCarousel from '../components/CategoryCarousel';
 import FadeImage from '../components/FadeImage';
-import { getPublishedProducts } from '../lib/productCatalog';
 import { getProducts, subscribeToSettings } from '../lib/firebase';
 import type { Category, Product } from '../lib/types';
 import { heroChild, heroCta, heroParent, luxuryEase } from '../lib/motion';
 import { getOptimizedImageUrl } from '../lib/cloudinary';
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>(() => getPublishedProducts());
+  const [products, setProducts] = useState<Product[]>([]);
   const [heroBg, setHeroBg] = useState<string>('/images/placeholder-hero.svg');
   const [heroMobileBg, setHeroMobileBg] = useState<string>('');
   const [heroBrandText, setHeroBrandText] = useState<string>('ZADEL');

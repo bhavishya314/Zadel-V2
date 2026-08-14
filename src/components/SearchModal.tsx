@@ -4,13 +4,48 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { formatINR } from '../lib/products';
-import { getPublishedProducts } from '../lib/productCatalog';
+import { subscribeToProducts } from '../lib/firebase';
+import type { Category, Product } from '../lib/types';
 import { getOptimizedImageUrl } from '../lib/cloudinary';
 
 export default function SearchModal() {
   const { isSearchOpen, setSearchOpen } = useStore();
   const [query, setQuery] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToProducts((firestoreProducts) => {
+      if (firestoreProducts && firestoreProducts.length > 0) {
+        const mapped: Product[] = firestoreProducts
+          .filter((fp) => fp.published !== false)
+          .map((fp) => ({
+            id: fp.id,
+            name: fp.name,
+            price: fp.price,
+            originalPrice: fp.originalPrice,
+            discount: fp.discount,
+            category: fp.category as Category,
+            description: fp.description,
+            sizes: fp.sizes,
+            images: fp.images,
+            featured: Boolean(fp.featured),
+            bestSeller: Boolean(fp.bestSeller),
+            published: fp.published !== false,
+            createdAt: fp.createdAt,
+            updatedAt: fp.updatedAt,
+            tags: fp.tags,
+          }));
+        setProducts(mapped);
+      } else {
+        setProducts([]);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (isSearchOpen) {
@@ -28,7 +63,7 @@ export default function SearchModal() {
   }, [isSearchOpen, setSearchOpen]);
 
   const results = useMemo(() => {
-    const catalog = getPublishedProducts();
+    const catalog = products;
     const q = query.trim().toLowerCase();
     if (!q) return catalog.slice(0, 6);
     return catalog.filter(
@@ -38,7 +73,7 @@ export default function SearchModal() {
         p.tags?.some((t) => t.includes(q)) ||
         p.description.toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [query, products]);
 
   return (
     <AnimatePresence>

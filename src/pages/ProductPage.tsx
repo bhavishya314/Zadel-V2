@@ -6,11 +6,7 @@ import ProductCard from '../components/ProductCard';
 import ProductReviews from '../components/ProductReviews';
 import FadeImage from '../components/FadeImage';
 import { formatINR } from '../lib/products';
-import {
-  getPublishedProductById,
-  getRelatedPublishedProducts,
-} from '../lib/productCatalog';
-import { getProduct, getDefaultSizesForCategory } from '../lib/firebase';
+import { getProduct, getProducts, getDefaultSizesForCategory } from '../lib/firebase';
 import { useStore } from '../context/StoreContext';
 import { luxuryEase } from '../lib/motion';
 import type { Category, Product } from '../lib/types';
@@ -21,9 +17,8 @@ export default function ProductPage() {
   const navigate = useNavigate();
   const { addToCart, toggleWishlist, isInWishlist } = useStore();
 
-  const [product, setProduct] = useState<Product | undefined>(() =>
-    id ? getPublishedProductById(id) : undefined
-  );
+  const [product, setProduct] = useState<Product | undefined>(undefined);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const [size, setSize] = useState('');
@@ -31,6 +26,7 @@ export default function ProductPage() {
   const [activeImage, setActiveImage] = useState(0);
   const [sizeError, setSizeError] = useState(false);
 
+  // Load the current product and all published Firestore products for related pieces
   useEffect(() => {
     if (!id) {
       setProduct(undefined);
@@ -41,53 +37,79 @@ export default function ProductPage() {
     let isMounted = true;
     setLoading(true);
 
-    async function loadFirestoreProduct() {
+    async function loadFirestoreData() {
       try {
-        const fp = await getProduct(id);
+        const [fp, allFirestoreData] = await Promise.all([
+          getProduct(id),
+          getProducts(),
+        ]);
+
         if (!isMounted) return;
 
-        if (fp) {
-          if (fp.published === false) {
-            setProduct(undefined);
-          } else {
-            const mapped: Product = {
-              id: fp.id,
-              name: fp.name,
-              price: fp.price,
-              originalPrice: fp.originalPrice,
-              discount: fp.discount,
-              category: fp.category as Category,
-              description: fp.description,
-              sizes:
-                Array.isArray(fp.sizes) && fp.sizes.length > 0
-                  ? fp.sizes
-                  : getDefaultSizesForCategory(fp.category),
-              images: fp.images,
-              featured: Boolean(fp.featured),
-              bestSeller: Boolean(fp.bestSeller),
-              published: fp.published !== false,
-              stock: typeof fp.stock === 'number' ? fp.stock : fp.inStock ? 10 : 0,
-              createdAt: fp.createdAt,
-              updatedAt: fp.updatedAt,
-              tags: fp.tags,
-            };
-            setProduct(mapped);
-          }
+        if (fp && fp.published !== false) {
+          const mapped: Product = {
+            id: fp.id,
+            name: fp.name,
+            price: fp.price,
+            originalPrice: fp.originalPrice,
+            discount: fp.discount,
+            category: fp.category as Category,
+            description: fp.description,
+            sizes:
+              Array.isArray(fp.sizes) && fp.sizes.length > 0
+                ? fp.sizes
+                : getDefaultSizesForCategory(fp.category),
+            images: fp.images,
+            featured: Boolean(fp.featured),
+            bestSeller: Boolean(fp.bestSeller),
+            published: fp.published !== false,
+            stock: typeof fp.stock === 'number' ? fp.stock : fp.inStock ? 10 : 0,
+            createdAt: fp.createdAt,
+            updatedAt: fp.updatedAt,
+            tags: fp.tags,
+          };
+          setProduct(mapped);
         } else {
-          // Fall back to local catalog product if document not in Firestore
-          const fallback = getPublishedProductById(id);
-          setProduct(fallback);
+          setProduct(undefined);
+        }
+
+        if (allFirestoreData && allFirestoreData.length > 0) {
+          const mappedList: Product[] = allFirestoreData
+            .filter((p) => p.published !== false)
+            .map((p) => ({
+              id: p.id,
+              name: p.name,
+              price: p.price,
+              originalPrice: p.originalPrice,
+              discount: p.discount,
+              category: p.category as Category,
+              description: p.description,
+              sizes: p.sizes,
+              images: p.images,
+              featured: Boolean(p.featured),
+              bestSeller: Boolean(p.bestSeller),
+              published: p.published !== false,
+              stock: typeof p.stock === 'number' ? p.stock : p.inStock ? 10 : 0,
+              createdAt: p.createdAt,
+              updatedAt: p.updatedAt,
+              tags: p.tags,
+            }));
+          setAllProducts(mappedList);
+        } else {
+          setAllProducts([]);
         }
       } catch (err) {
         console.error('Error loading product from Firestore:', err);
-        const fallback = getPublishedProductById(id);
-        setProduct(fallback);
+        if (isMounted) {
+          setProduct(undefined);
+          setAllProducts([]);
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
     }
 
-    loadFirestoreProduct();
+    loadFirestoreData();
 
     return () => {
       isMounted = false;
@@ -118,10 +140,13 @@ export default function ProductPage() {
     }
   }, [product?.id]);
 
-  const related = useMemo(
-    () => (product ? getRelatedPublishedProducts(product) : []),
-    [product]
-  );
+  const related = useMemo(() => {
+    if (!product || allProducts.length === 0) return [];
+    const pool = allProducts.filter((p) => p.published !== false && p.id !== product.id);
+    const sameCategory = pool.filter((p) => p.category === product.category);
+    const otherCategories = pool.filter((p) => p.category !== product.category);
+    return [...sameCategory, ...otherCategories].slice(0, 4);
+  }, [product, allProducts]);
 
   if (loading && !product) {
     return (
