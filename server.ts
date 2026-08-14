@@ -74,6 +74,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 // Middleware 2: Vercel URL restoration & Safe Body Parser
 app.use((req, res, next) => {
   // Restore original path if rewritten by Vercel serverless layer
