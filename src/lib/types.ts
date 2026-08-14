@@ -89,6 +89,7 @@ export interface FirestoreSettings {
   storeName?: string;
   logo?: string;
   heroImage?: string;
+  heroMobileImage?: string;
   heroImages?: string[];
   heroBrandText?: string;
   heroHeadline?: string;

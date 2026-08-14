@@ -8,19 +8,21 @@ import {
   RefreshCw,
   Trash2,
   Image as ImageIcon,
-  Star,
-  Plus,
   Eye,
   Type,
   Link as LinkIcon,
   ArrowRight,
   CheckCircle2,
+  Smartphone,
+  Monitor,
+  Info,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { subscribeToSettings, updateSettings } from '../../lib/firebase';
 import {
   uploadHeroImageToStorage,
   deleteHeroImageFromStorage,
+  getOptimizedImageUrl,
 } from '../../lib/cloudinary';
 import type { FirestoreSettings } from '../../lib/types';
 import AdminConfirmModal from '../../components/AdminConfirmModal';
@@ -47,42 +49,46 @@ export default function AdminHero() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Hero Fields
-  const [heroImage, setHeroImage] = useState('');
-  const [heroImages, setHeroImages] = useState<string[]>([]);
+  // Hero Image Fields
+  const [heroImage, setHeroImage] = useState(''); // Desktop / Laptop banner (16:9)
+  const [heroMobileImage, setHeroMobileImage] = useState(''); // Mobile banner (4:5)
+
+  // Hero Content Fields
   const [heroBrandText, setHeroBrandText] = useState('ZADEL');
   const [heroHeadline, setHeroHeadline] = useState('Quiet luxury.');
   const [heroHeadlineLine2, setHeroHeadlineLine2] = useState('Endlessly worn.');
   const [heroCtaText, setHeroCtaText] = useState('Shop Collection');
   const [heroCtaLink, setHeroCtaLink] = useState('/shop');
 
-  // Hero upload / replace / delete state
-  const [uploadingHero, setUploadingHero] = useState(false);
-  const [replacingHeroIndex, setReplacingHeroIndex] = useState<number | null>(null);
-  const [deletingHeroIndex, setDeletingHeroIndex] = useState<number | null>(null);
+  // Preview device toggle: 'desktop' | 'mobile'
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
-  // Confirm delete hero modal state
-  const [heroToDeleteIndex, setHeroToDeleteIndex] = useState<number | null>(null);
+  // Uploading / replacing states
+  const [uploadingDesktop, setUploadingDesktop] = useState(false);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
+  const [replacingType, setReplacingType] = useState<'desktop' | 'mobile' | null>(null);
+  const [deletingType, setDeletingType] = useState<'desktop' | 'mobile' | null>(null);
 
-  const heroFileInputRef = useRef<HTMLInputElement>(null);
-  const heroReplaceInputRef = useRef<HTMLInputElement>(null);
+  // Delete modal state
+  const [deleteConfirmType, setDeleteConfirmType] = useState<'desktop' | 'mobile' | null>(null);
 
-  // Saving states
+  // File Input Refs
+  const desktopFileInputRef = useRef<HTMLInputElement>(null);
+  const mobileFileInputRef = useRef<HTMLInputElement>(null);
+  const desktopReplaceInputRef = useRef<HTMLInputElement>(null);
+  const mobileReplaceInputRef = useRef<HTMLInputElement>(null);
+
+  // Saving state
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = subscribeToSettings((data) => {
       setSettings(data);
-      const primaryHero = data.heroImage || (data.heroImages && data.heroImages.length > 0 ? data.heroImages[0] : '');
-      setHeroImage(primaryHero);
-      setHeroImages(
-        Array.isArray(data.heroImages) && data.heroImages.length > 0
-          ? data.heroImages
-          : primaryHero
-          ? [primaryHero]
-          : []
-      );
+      const desktop = data.heroImage || (data.heroImages && data.heroImages.length > 0 ? data.heroImages[0] : '');
+      setHeroImage(desktop);
+      setHeroMobileImage(data.heroMobileImage || '');
+
       setHeroBrandText(data.heroBrandText ?? 'ZADEL');
       setHeroHeadline(data.heroHeadline ?? 'Quiet luxury.');
       setHeroHeadlineLine2(data.heroHeadlineLine2 ?? 'Endlessly worn.');
@@ -96,172 +102,218 @@ export default function AdminHero() {
     };
   }, []);
 
-  // Handle Hero Upload
-  const handleHeroFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Desktop Banner Upload
+  const handleDesktopUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setUploadingHero(true);
+    setUploadingDesktop(true);
     setErrorMsg(null);
 
     try {
-      const newUrls: string[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const url = await uploadHeroImageToStorage(files[i]);
-        newUrls.push(url);
-      }
+      const file = files[0];
+      const url = await uploadHeroImageToStorage(file);
 
-      const updatedHeroImages = [...heroImages, ...newUrls];
-      const primaryUrl = updatedHeroImages[0] || '';
+      const updatedHeroImages = [url, heroMobileImage].filter(Boolean);
 
       await updateSettings({
         id: settings?.id || 'general',
-        heroImage: primaryUrl,
+        heroImage: url,
         heroImages: updatedHeroImages,
       });
 
-      setHeroImage(primaryUrl);
-      setHeroImages(updatedHeroImages);
-
-      addToast('success', `${newUrls.length} Hero image(s) uploaded to Cloudinary.`);
+      setHeroImage(url);
+      addToast('success', 'Desktop banner (16:9) uploaded and saved.');
     } catch (err) {
-      console.error('Error uploading hero image(s):', err);
-      setErrorMsg('Failed to upload hero image(s) to Cloudinary.');
-      addToast('error', 'Failed to upload hero images.');
+      console.error('Error uploading desktop hero banner:', err);
+      setErrorMsg('Failed to upload desktop hero banner to Cloudinary.');
+      addToast('error', 'Failed to upload desktop banner.');
     } finally {
-      setUploadingHero(false);
-      if (heroFileInputRef.current) {
-        heroFileInputRef.current.value = '';
+      setUploadingDesktop(false);
+      if (desktopFileInputRef.current) {
+        desktopFileInputRef.current.value = '';
       }
     }
   };
 
-  // Trigger Replace Hero Image
-  const triggerReplaceHero = (index: number) => {
-    setReplacingHeroIndex(index);
-    if (heroReplaceInputRef.current) {
-      heroReplaceInputRef.current.value = '';
-      heroReplaceInputRef.current.click();
-    }
-  };
-
-  // Handle Replace Hero Image File
-  const handleReplaceHeroFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (replacingHeroIndex === null) return;
+  // Handle Desktop Banner Replace
+  const handleDesktopReplace = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    const targetIndex = replacingHeroIndex;
-    setUploadingHero(true);
+    setUploadingDesktop(true);
+    setReplacingType('desktop');
     setErrorMsg(null);
 
     try {
-      const oldUrl = heroImages[targetIndex];
+      const oldUrl = heroImage;
+      const file = files[0];
       const newUrl = await uploadHeroImageToStorage(file);
 
-      const updatedHeroImages = [...heroImages];
-      updatedHeroImages[targetIndex] = newUrl;
-      const primaryUrl = updatedHeroImages[0] || '';
+      const updatedHeroImages = [newUrl, heroMobileImage].filter(Boolean);
 
       await updateSettings({
         id: settings?.id || 'general',
-        heroImage: primaryUrl,
+        heroImage: newUrl,
         heroImages: updatedHeroImages,
       });
 
-      setHeroImage(primaryUrl);
-      setHeroImages(updatedHeroImages);
+      setHeroImage(newUrl);
 
       if (oldUrl && oldUrl !== newUrl) {
         deleteHeroImageFromStorage(oldUrl).catch(() => {});
       }
 
-      addToast('success', 'Hero image replaced in Cloudinary and updated.');
+      addToast('success', 'Desktop banner replaced and synced with Cloudinary.');
     } catch (err) {
-      console.error('Error replacing hero image:', err);
-      setErrorMsg('Failed to replace hero image.');
-      addToast('error', 'Failed to replace hero image.');
+      console.error('Error replacing desktop hero banner:', err);
+      setErrorMsg('Failed to replace desktop banner.');
+      addToast('error', 'Failed to replace desktop banner.');
     } finally {
-      setUploadingHero(false);
-      setReplacingHeroIndex(null);
-      if (heroReplaceInputRef.current) {
-        heroReplaceInputRef.current.value = '';
+      setUploadingDesktop(false);
+      setReplacingType(null);
+      if (desktopReplaceInputRef.current) {
+        desktopReplaceInputRef.current.value = '';
       }
     }
   };
 
-  // Handle Confirm Delete Hero Image
-  const handleConfirmDeleteHero = async () => {
-    if (heroToDeleteIndex === null) return;
+  // Handle Mobile Banner Upload
+  const handleMobileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const index = heroToDeleteIndex;
-    const targetUrl = heroImages[index];
-    if (!targetUrl) return;
-
-    setDeletingHeroIndex(index);
+    setUploadingMobile(true);
     setErrorMsg(null);
 
     try {
-      const updatedHeroImages = heroImages.filter((_, i) => i !== index);
-      const primaryUrl = updatedHeroImages[0] || '';
+      const file = files[0];
+      const url = await uploadHeroImageToStorage(file);
+
+      const updatedHeroImages = [heroImage, url].filter(Boolean);
 
       await updateSettings({
         id: settings?.id || 'general',
-        heroImage: primaryUrl,
+        heroMobileImage: url,
         heroImages: updatedHeroImages,
       });
 
-      setHeroImage(primaryUrl);
-      setHeroImages(updatedHeroImages);
-
-      await deleteHeroImageFromStorage(targetUrl);
-
-      addToast('success', 'Hero image deleted from Cloudinary.');
-      setHeroToDeleteIndex(null);
+      setHeroMobileImage(url);
+      addToast('success', 'Mobile banner (4:5) uploaded and saved.');
     } catch (err) {
-      console.error('Error deleting hero image:', err);
-      setErrorMsg('Failed to delete hero image.');
-      addToast('error', 'Failed to delete hero image.');
+      console.error('Error uploading mobile hero banner:', err);
+      setErrorMsg('Failed to upload mobile hero banner to Cloudinary.');
+      addToast('error', 'Failed to upload mobile banner.');
     } finally {
-      setDeletingHeroIndex(null);
+      setUploadingMobile(false);
+      if (mobileFileInputRef.current) {
+        mobileFileInputRef.current.value = '';
+      }
     }
   };
 
-  // Set Hero as Primary
-  const handleSetPrimaryHero = async (index: number) => {
-    if (index === 0) return;
-    const selectedUrl = heroImages[index];
-    const updatedHeroImages = [selectedUrl, ...heroImages.filter((_, i) => i !== index)];
+  // Handle Mobile Banner Replace
+  const handleMobileReplace = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingMobile(true);
+    setReplacingType('mobile');
+    setErrorMsg(null);
 
     try {
+      const oldUrl = heroMobileImage;
+      const file = files[0];
+      const newUrl = await uploadHeroImageToStorage(file);
+
+      const updatedHeroImages = [heroImage, newUrl].filter(Boolean);
+
       await updateSettings({
         id: settings?.id || 'general',
-        heroImage: selectedUrl,
+        heroMobileImage: newUrl,
         heroImages: updatedHeroImages,
       });
 
-      setHeroImage(selectedUrl);
-      setHeroImages(updatedHeroImages);
+      setHeroMobileImage(newUrl);
 
-      addToast('success', 'Primary Hero image updated! Homepage banner updated.');
+      if (oldUrl && oldUrl !== newUrl) {
+        deleteHeroImageFromStorage(oldUrl).catch(() => {});
+      }
+
+      addToast('success', 'Mobile banner replaced and synced with Cloudinary.');
     } catch (err) {
-      console.error('Error setting primary hero image:', err);
-      addToast('error', 'Failed to set primary hero image.');
+      console.error('Error replacing mobile hero banner:', err);
+      setErrorMsg('Failed to replace mobile banner.');
+      addToast('error', 'Failed to replace mobile banner.');
+    } finally {
+      setUploadingMobile(false);
+      setReplacingType(null);
+      if (mobileReplaceInputRef.current) {
+        mobileReplaceInputRef.current.value = '';
+      }
     }
   };
 
-  // Handle Form Save
+  // Handle Confirm Delete Banner
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmType) return;
+
+    const isDesktop = deleteConfirmType === 'desktop';
+    const targetUrl = isDesktop ? heroImage : heroMobileImage;
+
+    setDeletingType(deleteConfirmType);
+    setErrorMsg(null);
+
+    try {
+      if (isDesktop) {
+        const updatedHeroImages = [heroMobileImage].filter(Boolean);
+        await updateSettings({
+          id: settings?.id || 'general',
+          heroImage: '',
+          heroImages: updatedHeroImages,
+        });
+        setHeroImage('');
+      } else {
+        const updatedHeroImages = [heroImage].filter(Boolean);
+        await updateSettings({
+          id: settings?.id || 'general',
+          heroMobileImage: '',
+          heroImages: updatedHeroImages,
+        });
+        setHeroMobileImage('');
+      }
+
+      if (targetUrl) {
+        await deleteHeroImageFromStorage(targetUrl);
+      }
+
+      addToast('success', `${isDesktop ? 'Desktop' : 'Mobile'} banner removed.`);
+      setDeleteConfirmType(null);
+    } catch (err) {
+      console.error('Error deleting hero banner:', err);
+      setErrorMsg('Failed to delete hero banner.');
+      addToast('error', 'Failed to delete banner.');
+    } finally {
+      setDeletingType(null);
+    }
+  };
+
+  // Handle Complete Form Save
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setErrorMsg(null);
 
     try {
+      const desktopClean = heroImage.trim();
+      const mobileClean = heroMobileImage.trim();
+      const heroList = [desktopClean, mobileClean].filter(Boolean);
+
       await updateSettings({
         id: settings?.id || 'general',
-        heroImage: heroImage.trim(),
-        heroImages: heroImages,
+        heroImage: desktopClean,
+        heroMobileImage: mobileClean,
+        heroImages: heroList,
         heroBrandText: heroBrandText.trim() || 'ZADEL',
         heroHeadline: heroHeadline.trim() || 'Quiet luxury.',
         heroHeadlineLine2: heroHeadlineLine2.trim(),
@@ -278,290 +330,412 @@ export default function AdminHero() {
     }
   };
 
+  // Active preview image based on previewDevice toggle
+  const activePreviewImage =
+    previewDevice === 'mobile'
+      ? (heroMobileImage || heroImage || '/images/placeholder-hero.svg')
+      : (heroImage || '/images/placeholder-hero.svg');
+
   return (
     <div className="space-y-6">
       <AdminToast toasts={toasts} onDismiss={removeToast} />
 
-      {/* Delete Hero Image Confirm Modal */}
+      {/* Delete Banner Confirm Modal */}
       <AdminConfirmModal
-        isOpen={heroToDeleteIndex !== null}
-        title="Delete Hero Banner Image"
-        description="Are you sure you want to delete this hero banner image from Cloudinary?"
+        isOpen={deleteConfirmType !== null}
+        title={`Delete ${deleteConfirmType === 'desktop' ? 'Desktop (16:9)' : 'Mobile (4:5)'} Banner`}
+        description={`Are you sure you want to remove this ${
+          deleteConfirmType === 'desktop' ? 'desktop' : 'mobile'
+        } banner image from Cloudinary?`}
         confirmText="Delete Banner"
         variant="danger"
-        loading={deletingHeroIndex !== null}
-        onConfirm={handleConfirmDeleteHero}
-        onClose={() => setHeroToDeleteIndex(null)}
+        loading={deletingType !== null}
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteConfirmType(null)}
       />
 
       {/* Hidden File Inputs */}
       <input
         type="file"
-        ref={heroFileInputRef}
+        ref={desktopFileInputRef}
         accept="image/*"
-        multiple
-        onChange={handleHeroFileUpload}
+        onChange={handleDesktopUpload}
         className="hidden"
       />
-
       <input
         type="file"
-        ref={heroReplaceInputRef}
+        ref={desktopReplaceInputRef}
         accept="image/*"
-        onChange={handleReplaceHeroFileChange}
+        onChange={handleDesktopReplace}
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={mobileFileInputRef}
+        accept="image/*"
+        onChange={handleMobileUpload}
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={mobileReplaceInputRef}
+        accept="image/*"
+        onChange={handleMobileReplace}
         className="hidden"
       />
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-800 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-5">
         <div>
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-zadel-gold">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>Hero Banner Configuration</span>
+            <span>Hero Banner System</span>
           </div>
-          <h1 className="font-display text-2xl sm:text-3xl text-foreground">
+          <h1 className="font-display text-2xl sm:text-3xl text-foreground mt-0.5">
             Edit Hero Section
           </h1>
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-emerald-950/50 border border-emerald-800/40 px-3 py-2 text-xs text-emerald-400">
-          <ShieldCheck className="h-4 w-4" />
-          <span className="hidden sm:inline">Synced with Firestore & Cloudinary</span>
+        <div className="flex items-center gap-2 rounded-xl bg-emerald-950/40 dark:bg-emerald-950/50 border border-emerald-800/40 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400">
+          <ShieldCheck className="h-4 w-4 shrink-0" />
+          <span>Synced with Cloudinary & Responsive Picture</span>
         </div>
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
+        <div className="py-16 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
           <Loader2 className="h-5 w-5 animate-spin text-zadel-gold" />
           <span>Loading hero configuration from Firestore...</span>
         </div>
       ) : (
         <form onSubmit={handleSave} className="space-y-6">
           {errorMsg && (
-            <div className="p-3 bg-red-950/60 border border-red-800/50 text-red-300 rounded-lg text-xs">
+            <div className="p-3 bg-red-950/40 dark:bg-red-950/60 border border-red-800/50 text-red-600 dark:text-red-300 rounded-lg text-xs">
               {errorMsg}
             </div>
           )}
 
-          {/* Hero Live Preview Component */}
-          <div className="rounded-xl border border-neutral-800 bg-zadel-elevated p-5 sm:p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <div className="flex items-center gap-2 text-neutral-200 font-medium text-xs uppercase tracking-wider">
+          {/* Live Hero Preview with Responsive Switcher */}
+          <div className="rounded-xl border border-border bg-zadel-elevated p-5 sm:p-6 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
+              <div className="flex items-center gap-2 text-foreground font-medium text-xs uppercase tracking-wider">
                 <Eye className="h-4 w-4 text-zadel-gold" />
-                <span>Live Hero Preview</span>
-              </div>
-              <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3" />
-                <span>Real-time Storefront Visual</span>
-              </span>
-            </div>
-
-            <div className="relative overflow-hidden rounded-xl border border-neutral-800 bg-black h-64 sm:h-80 flex items-center justify-center text-center p-6">
-              {/* Background image preview */}
-              <div className="absolute inset-0">
-                <img
-                  src={heroImage || '/images/placeholder-hero.svg'}
-                  alt="Hero Background Preview"
-                  className="h-full w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-zadel-black via-zadel-black/55 to-zadel-black/30" />
-                <div className="absolute inset-0 bg-gradient-to-r from-zadel-black/50 to-transparent" />
+                <span>Responsive Live Preview</span>
               </div>
 
-              {/* Dynamic text overlay */}
-              <div className="relative z-10 max-w-lg space-y-3">
-                <p className="font-display text-lg tracking-[0.4em] text-white uppercase sm:text-2xl">
-                  {heroBrandText || 'ZADEL'}
-                </p>
-                <h2 className="font-display text-2xl leading-tight tracking-wide text-white sm:text-3xl lg:text-4xl">
-                  {heroHeadline || 'Quiet luxury.'}
-                  {heroHeadlineLine2 && (
-                    <>
-                      <br />
-                      <span className="text-white/70">{heroHeadlineLine2}</span>
-                    </>
-                  )}
-                </h2>
-                <div className="pt-2">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-zadel-gold px-5 py-2 text-[10px] font-semibold tracking-[0.2em] text-zadel-ink uppercase">
-                    {heroCtaText || 'Shop Collection'}
-                    <ArrowRight size={12} />
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Hero Background Image Management */}
-          <div className="rounded-xl border border-neutral-800 bg-zadel-elevated p-5 sm:p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
-              <div className="flex items-center gap-2 text-neutral-200 font-medium text-xs uppercase tracking-wider">
-                <ImageIcon className="h-4 w-4 text-zadel-gold" />
-                <span>Hero Background Image</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/50">
-                  Cloudinary Upload
-                </span>
+              {/* Device Preview Switcher */}
+              <div className="flex items-center gap-1.5 p-1 bg-muted/60 dark:bg-neutral-900/80 rounded-lg border border-border">
                 <button
                   type="button"
-                  onClick={() => heroFileInputRef.current?.click()}
-                  disabled={uploadingHero}
-                  className="flex items-center gap-1.5 bg-zadel-gold text-black px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer hover:bg-amber-400 transition-colors disabled:opacity-50"
+                  onClick={() => setPreviewDevice('desktop')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                    previewDevice === 'desktop'
+                      ? 'bg-zadel-gold text-black shadow-xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
                 >
-                  {uploadingHero ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Plus className="h-3.5 w-3.5" />
-                  )}
-                  <span>Upload Image</span>
+                  <Monitor className="h-3.5 w-3.5" />
+                  <span>Desktop (16:9)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDevice('mobile')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                    previewDevice === 'mobile'
+                      ? 'bg-zadel-gold text-black shadow-xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Smartphone className="h-3.5 w-3.5" />
+                  <span>Mobile (4:5)</span>
                 </button>
               </div>
             </div>
 
-            {heroImages.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4">
-                {heroImages.map((imgUrl, index) => {
-                  const isPrimary = index === 0 || imgUrl === heroImage;
-                  const isDeleting = deletingHeroIndex === index;
-                  const isReplacing = replacingHeroIndex === index;
+            {/* Preview Frame */}
+            <div className="flex justify-center bg-black/5 dark:bg-black/30 rounded-xl p-4 sm:p-6 border border-dashed border-border/70">
+              <div
+                className={`relative overflow-hidden rounded-xl border border-border bg-black transition-all duration-300 flex items-center justify-center text-center p-6 ${
+                  previewDevice === 'desktop'
+                    ? 'w-full aspect-16/9 max-h-[380px]'
+                    : 'w-full max-w-[320px] aspect-4/5'
+                }`}
+              >
+                {/* Background Image Preview */}
+                <div className="absolute inset-0">
+                  <img
+                    src={activePreviewImage}
+                    alt="Hero Live Preview"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-zadel-black via-zadel-black/55 to-zadel-black/30" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-zadel-black/50 to-transparent" />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-zadel-black to-transparent" />
+                </div>
 
-                  return (
-                    <div
-                      key={imgUrl + index}
-                      className={`flex flex-col md:flex-row md:items-center gap-4 p-4 rounded-lg border transition-colors ${
-                        isPrimary
-                          ? 'bg-neutral-900/90 border-zadel-gold/40'
-                          : 'bg-neutral-900/40 border-neutral-800'
-                      }`}
-                    >
-                      {/* Image Thumbnail */}
-                      <div className="relative h-28 w-full md:w-52 rounded-md border border-neutral-800 bg-neutral-950 overflow-hidden shrink-0">
-                        <img
-                          src={imgUrl}
-                          alt={`Hero Banner ${index + 1}`}
-                          className="h-full w-full object-cover"
-                        />
-                        {isPrimary && (
-                          <span className="absolute top-2 left-2 flex items-center gap-1 bg-zadel-gold text-black text-[10px] font-semibold px-2 py-0.5 rounded shadow">
-                            <Star className="h-3 w-3 fill-black" />
-                            <span>Primary Hero</span>
-                          </span>
-                        )}
-                      </div>
+                {/* Badge Indicator */}
+                <div className="absolute top-3 left-3 z-20 flex items-center gap-1 bg-black/70 backdrop-blur-xs text-white/90 border border-white/10 px-2 py-0.5 rounded-full text-[10px]">
+                  {previewDevice === 'desktop' ? (
+                    <Monitor className="h-3 w-3 text-zadel-gold" />
+                  ) : (
+                    <Smartphone className="h-3 w-3 text-zadel-gold" />
+                  )}
+                  <span>
+                    {previewDevice === 'desktop'
+                      ? 'Desktop Banner Preview'
+                      : heroMobileImage
+                      ? 'Mobile Banner Preview'
+                      : 'Mobile Preview (Fallback to Desktop)'}
+                  </span>
+                </div>
 
-                      {/* Info */}
-                      <div className="flex-1 space-y-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-neutral-200 text-xs">
-                            Hero Background #{index + 1}
-                          </span>
-                          {isPrimary && (
-                            <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" />
-                              <span>Active on Homepage</span>
-                            </span>
-                          )}
-                        </div>
-                        <p
-                          className="text-[11px] text-neutral-500 font-mono truncate"
-                          title={imgUrl}
-                        >
-                          {imgUrl}
-                        </p>
-                      </div>
+                {/* Dynamic text overlay */}
+                <div className="relative z-10 max-w-lg space-y-2.5 px-2">
+                  <p className="font-display text-base sm:text-xl tracking-[0.4em] text-white uppercase">
+                    {heroBrandText || 'ZADEL'}
+                  </p>
+                  <h2 className="font-display text-xl sm:text-3xl leading-tight tracking-wide text-white">
+                    {heroHeadline || 'Quiet luxury.'}
+                    {heroHeadlineLine2 && (
+                      <>
+                        <br />
+                        <span className="text-white/70">{heroHeadlineLine2}</span>
+                      </>
+                    )}
+                  </h2>
+                  <div className="pt-2">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-zadel-gold px-4 py-1.5 text-[9px] sm:text-[10px] font-semibold tracking-[0.2em] text-zadel-ink uppercase">
+                      {heroCtaText || 'Shop Collection'}
+                      <ArrowRight size={11} />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 self-start md:self-center shrink-0">
-                        {!isPrimary && (
-                          <button
-                            type="button"
-                            onClick={() => handleSetPrimaryHero(index)}
-                            className="flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-zadel-gold border border-zadel-gold/30 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                          >
-                            <Star className="h-3.5 w-3.5" />
-                            <span>Set as Primary</span>
-                          </button>
-                        )}
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-1">
+              <Info className="h-3.5 w-3.5 text-zadel-gold shrink-0" />
+              <span>
+                The customer website automatically renders the 16:9 banner on laptops/desktops and
+                seamlessly switches to the 4:5 portrait banner on smartphones.
+              </span>
+            </div>
+          </div>
 
-                        <button
-                          type="button"
-                          onClick={() => triggerReplaceHero(index)}
-                          disabled={uploadingHero || isDeleting}
-                          className="flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                          {isReplacing && uploadingHero ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin text-zadel-gold" />
-                          ) : (
-                            <RefreshCw className="h-3.5 w-3.5 text-zadel-gold" />
-                          )}
-                          <span>Replace</span>
-                        </button>
+          {/* TWO SEPARATE BANNER UPLOAD CARDS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 1. DESKTOP / LAPTOP BANNER (16:9) */}
+            <div className="rounded-xl border border-border bg-zadel-elevated p-5 sm:p-6 space-y-4 shadow-sm flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                  <div className="flex items-center gap-2 text-foreground font-medium text-xs uppercase tracking-wider">
+                    <Monitor className="h-4 w-4 text-zadel-gold" />
+                    <span>Desktop / Laptop Banner</span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-zadel-gold bg-zadel-gold/10 border border-zadel-gold/30 px-2 py-0.5 rounded-full">
+                    Ratio 16:9 (Recommended)
+                  </span>
+                </div>
 
-                        <button
-                          type="button"
-                          onClick={() => setHeroToDeleteIndex(index)}
-                          disabled={uploadingHero || isDeleting}
-                          className="flex items-center gap-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/60 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          <span>Delete</span>
-                        </button>
+                <p className="text-xs text-muted-foreground">
+                  Primary banner displayed on desktops, laptops, and large tablets. Recommended size:{' '}
+                  <strong className="text-foreground">1920 × 1080 px</strong>.
+                </p>
+
+                {heroImage ? (
+                  <div className="space-y-3">
+                    {/* 16:9 Image Preview Frame */}
+                    <div className="relative aspect-16/9 w-full rounded-lg border border-border bg-black/40 overflow-hidden group">
+                      <img
+                        src={heroImage}
+                        alt="Desktop Hero Banner"
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/80 backdrop-blur-xs text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-800/40">
+                        <CheckCircle2 className="h-3 w-3" />
+                        <span>Active on Desktop</span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/40 p-6 text-center space-y-3">
-                <ImageIcon className="h-8 w-8 text-zadel-gold mx-auto" />
-                <div>
-                  <p className="font-medium text-neutral-300 text-xs">No Hero Images Uploaded</p>
-                  <p className="text-[11px] text-neutral-500">
-                    Upload hero background image to Cloudinary or paste a direct image URL below
-                  </p>
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => heroFileInputRef.current?.click()}
-                    disabled={uploadingHero}
-                    className="inline-flex items-center gap-2 bg-zadel-gold text-black font-medium text-xs px-4 py-2 rounded-lg cursor-pointer hover:bg-amber-400 transition-colors disabled:opacity-50"
-                  >
-                    {uploadingHero ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="h-4 w-4" />
-                    )}
-                    <span>{uploadingHero ? 'Uploading to Cloudinary...' : 'Upload Hero Image'}</span>
-                  </button>
-                </div>
-              </div>
-            )}
 
-            <div>
-              <label className="block mb-1.5 font-medium text-neutral-300 text-xs">
-                Direct Hero Image URL (Optional fallback)
-              </label>
-              <input
-                type="text"
-                value={heroImage}
-                onChange={(e) => setHeroImage(e.target.value)}
-                placeholder="https://res.cloudinary.com/... or /images/..."
-                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none font-mono text-[11px]"
-              />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => desktopReplaceInputRef.current?.click()}
+                        disabled={uploadingDesktop}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-muted hover:bg-muted/80 text-foreground border border-border px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {uploadingDesktop && replacingType === 'desktop' ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-zadel-gold" />
+                        ) : (
+                          <RefreshCw className="h-3.5 w-3.5 text-zadel-gold" />
+                        )}
+                        <span>Replace Desktop Banner</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirmType('desktop')}
+                        disabled={uploadingDesktop}
+                        className="flex items-center justify-center gap-1.5 bg-red-950/20 dark:bg-red-950/60 hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-800/40 px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border bg-muted/20 p-6 text-center space-y-3">
+                    <ImageIcon className="h-8 w-8 text-zadel-gold mx-auto" />
+                    <div>
+                      <p className="font-medium text-foreground text-xs">No Desktop Banner Uploaded</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Recommended: 1920 × 1080 px (16:9 ratio)
+                      </p>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => desktopFileInputRef.current?.click()}
+                        disabled={uploadingDesktop}
+                        className="inline-flex items-center gap-2 bg-zadel-gold text-black font-semibold text-xs px-4 py-2 rounded-lg cursor-pointer hover:bg-amber-400 transition-colors disabled:opacity-50 shadow-xs"
+                      >
+                        {uploadingDesktop ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" />
+                        )}
+                        <span>{uploadingDesktop ? 'Uploading...' : 'Upload Desktop (16:9)'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-border/60">
+                <label className="block mb-1 font-medium text-foreground text-xs">
+                  Direct Desktop Image URL
+                </label>
+                <input
+                  type="text"
+                  value={heroImage}
+                  onChange={(e) => setHeroImage(e.target.value)}
+                  placeholder="https://res.cloudinary.com/... or /images/..."
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-zadel-gold focus:outline-none font-mono text-[11px]"
+                />
+              </div>
+            </div>
+
+            {/* 2. MOBILE BANNER (4:5) */}
+            <div className="rounded-xl border border-border bg-zadel-elevated p-5 sm:p-6 space-y-4 shadow-sm flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                  <div className="flex items-center gap-2 text-foreground font-medium text-xs uppercase tracking-wider">
+                    <Smartphone className="h-4 w-4 text-zadel-gold" />
+                    <span>Mobile Banner</span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-zadel-gold bg-zadel-gold/10 border border-zadel-gold/30 px-2 py-0.5 rounded-full">
+                    Ratio 4:5 (Recommended)
+                  </span>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Vertical banner optimized for smartphone viewports. Recommended size:{' '}
+                  <strong className="text-foreground">1080 × 1350 px</strong> (portrait).
+                </p>
+
+                {heroMobileImage ? (
+                  <div className="space-y-3">
+                    {/* 4:5 Image Preview Frame */}
+                    <div className="relative aspect-4/5 max-h-[220px] w-auto mx-auto rounded-lg border border-border bg-black/40 overflow-hidden group">
+                      <img
+                        src={heroMobileImage}
+                        alt="Mobile Hero Banner"
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/80 backdrop-blur-xs text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-800/40">
+                        <CheckCircle2 className="h-3 w-3" />
+                        <span>Active on Mobile</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => mobileReplaceInputRef.current?.click()}
+                        disabled={uploadingMobile}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-muted hover:bg-muted/80 text-foreground border border-border px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {uploadingMobile && replacingType === 'mobile' ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-zadel-gold" />
+                        ) : (
+                          <RefreshCw className="h-3.5 w-3.5 text-zadel-gold" />
+                        )}
+                        <span>Replace Mobile Banner</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirmType('mobile')}
+                        disabled={uploadingMobile}
+                        className="flex items-center justify-center gap-1.5 bg-red-950/20 dark:bg-red-950/60 hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-800/40 px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border bg-muted/20 p-6 text-center space-y-3">
+                    <Smartphone className="h-8 w-8 text-zadel-gold mx-auto" />
+                    <div>
+                      <p className="font-medium text-foreground text-xs">No Mobile Banner Uploaded</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Optional: If empty, mobile screens automatically use the Desktop Banner
+                      </p>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => mobileFileInputRef.current?.click()}
+                        disabled={uploadingMobile}
+                        className="inline-flex items-center gap-2 bg-zadel-gold text-black font-semibold text-xs px-4 py-2 rounded-lg cursor-pointer hover:bg-amber-400 transition-colors disabled:opacity-50 shadow-xs"
+                      >
+                        {uploadingMobile ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" />
+                        )}
+                        <span>{uploadingMobile ? 'Uploading...' : 'Upload Mobile (4:5)'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-border/60">
+                <label className="block mb-1 font-medium text-foreground text-xs">
+                  Direct Mobile Image URL (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={heroMobileImage}
+                  onChange={(e) => setHeroMobileImage(e.target.value)}
+                  placeholder="https://res.cloudinary.com/... or /images/..."
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-zadel-gold focus:outline-none font-mono text-[11px]"
+                />
+              </div>
             </div>
           </div>
 
           {/* Hero Content Text Configuration */}
-          <div className="rounded-xl border border-neutral-800 bg-zadel-elevated p-5 sm:p-6 space-y-4">
-            <div className="border-b border-neutral-800 pb-3 flex items-center gap-2 text-neutral-200 font-medium text-xs uppercase tracking-wider">
+          <div className="rounded-xl border border-border bg-zadel-elevated p-5 sm:p-6 space-y-4 shadow-sm">
+            <div className="border-b border-border pb-3 flex items-center gap-2 text-foreground font-medium text-xs uppercase tracking-wider">
               <Type className="h-4 w-4 text-zadel-gold" />
               <span>Hero Text Content & Typography</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block mb-1.5 font-medium text-neutral-300">
+                <label className="block mb-1.5 font-medium text-foreground">
                   Small Hero Brand Text
                 </label>
                 <input
@@ -570,15 +744,15 @@ export default function AdminHero() {
                   value={heroBrandText}
                   onChange={(e) => setHeroBrandText(e.target.value)}
                   placeholder="e.g. ZADEL"
-                  className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none font-display uppercase tracking-widest"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-zadel-gold focus:outline-none font-display uppercase tracking-widest"
                 />
-                <p className="mt-1 text-[11px] text-neutral-500">
+                <p className="mt-1 text-[11px] text-muted-foreground">
                   Small tracking label displayed above the main headline (default: ZADEL).
                 </p>
               </div>
 
               <div>
-                <label className="block mb-1.5 font-medium text-neutral-300">
+                <label className="block mb-1.5 font-medium text-foreground">
                   Main Hero Headline (Line 1)
                 </label>
                 <input
@@ -587,15 +761,15 @@ export default function AdminHero() {
                   value={heroHeadline}
                   onChange={(e) => setHeroHeadline(e.target.value)}
                   placeholder="e.g. Quiet luxury."
-                  className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-zadel-gold focus:outline-none"
                 />
-                <p className="mt-1 text-[11px] text-neutral-500">
+                <p className="mt-1 text-[11px] text-muted-foreground">
                   Primary high-impact title text (default: Quiet luxury.).
                 </p>
               </div>
 
               <div className="md:col-span-2">
-                <label className="block mb-1.5 font-medium text-neutral-300">
+                <label className="block mb-1.5 font-medium text-foreground">
                   Main Hero Headline Subtitle (Line 2)
                 </label>
                 <input
@@ -603,25 +777,25 @@ export default function AdminHero() {
                   value={heroHeadlineLine2}
                   onChange={(e) => setHeroHeadlineLine2(e.target.value)}
                   placeholder="e.g. Endlessly worn."
-                  className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-zadel-gold focus:outline-none"
                 />
-                <p className="mt-1 text-[11px] text-neutral-500">
-                  Secondary line rendered below main headline with elegant 70% opacity (default: Endlessly worn.).
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Secondary line rendered below main headline with elegant opacity (default: Endlessly worn.).
                 </p>
               </div>
             </div>
           </div>
 
           {/* Hero CTA Configuration */}
-          <div className="rounded-xl border border-neutral-800 bg-zadel-elevated p-5 sm:p-6 space-y-4">
-            <div className="border-b border-neutral-800 pb-3 flex items-center gap-2 text-neutral-200 font-medium text-xs uppercase tracking-wider">
+          <div className="rounded-xl border border-border bg-zadel-elevated p-5 sm:p-6 space-y-4 shadow-sm">
+            <div className="border-b border-border pb-3 flex items-center gap-2 text-foreground font-medium text-xs uppercase tracking-wider">
               <LinkIcon className="h-4 w-4 text-zadel-gold" />
               <span>CTA Button Configuration</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block mb-1.5 font-medium text-neutral-300">
+                <label className="block mb-1.5 font-medium text-foreground">
                   CTA Button Label
                 </label>
                 <input
@@ -630,15 +804,15 @@ export default function AdminHero() {
                   value={heroCtaText}
                   onChange={(e) => setHeroCtaText(e.target.value)}
                   placeholder="e.g. Shop Collection"
-                  className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-zadel-gold focus:outline-none"
                 />
-                <p className="mt-1 text-[11px] text-neutral-500">
+                <p className="mt-1 text-[11px] text-muted-foreground">
                   Text displayed on the luxury gold button (default: Shop Collection).
                 </p>
               </div>
 
               <div>
-                <label className="block mb-1.5 font-medium text-neutral-300">
+                <label className="block mb-1.5 font-medium text-foreground">
                   CTA Button Link URL
                 </label>
                 <input
@@ -647,9 +821,9 @@ export default function AdminHero() {
                   value={heroCtaLink}
                   onChange={(e) => setHeroCtaLink(e.target.value)}
                   placeholder="e.g. /shop"
-                  className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-neutral-200 placeholder-neutral-600 focus:border-zadel-gold focus:outline-none font-mono"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-zadel-gold focus:outline-none font-mono"
                 />
-                <p className="mt-1 text-[11px] text-neutral-500">
+                <p className="mt-1 text-[11px] text-muted-foreground">
                   Target relative or external route (default: /shop).
                 </p>
               </div>
@@ -660,8 +834,8 @@ export default function AdminHero() {
           <div className="flex justify-end pt-2">
             <button
               type="submit"
-              disabled={saving || uploadingHero}
-              className="flex items-center gap-2 bg-zadel-gold text-black font-semibold px-6 py-2.5 rounded-lg hover:bg-amber-400 transition-colors disabled:opacity-50 cursor-pointer text-xs"
+              disabled={saving || uploadingDesktop || uploadingMobile}
+              className="flex items-center gap-2 bg-zadel-gold text-black font-semibold px-6 py-2.5 rounded-lg hover:bg-amber-400 transition-colors disabled:opacity-50 cursor-pointer text-xs shadow-xs"
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

@@ -29,6 +29,7 @@ export async function getSettings(): Promise<FirestoreSettings> {
       storeName: data.storeName || data.brandName || 'ZADEL',
       logo: data.logo || '',
       heroImage: data.heroImage || '',
+      heroMobileImage: data.heroMobileImage || '',
       heroImages: Array.isArray(data.heroImages) ? data.heroImages : (data.heroImage ? [data.heroImage] : []),
       heroBrandText: data.heroBrandText ?? 'ZADEL',
       heroHeadline: data.heroHeadline ?? 'Quiet luxury.',
@@ -59,6 +60,7 @@ export async function getSettings(): Promise<FirestoreSettings> {
       storeName: data.storeName || data.brandName || 'ZADEL',
       logo: data.logo || '',
       heroImage: data.heroImage || '',
+      heroMobileImage: data.heroMobileImage || '',
       heroImages: Array.isArray(data.heroImages) ? data.heroImages : (data.heroImage ? [data.heroImage] : []),
       heroBrandText: data.heroBrandText ?? 'ZADEL',
       heroHeadline: data.heroHeadline ?? 'Quiet luxury.',
@@ -84,6 +86,7 @@ export async function getSettings(): Promise<FirestoreSettings> {
     storeName: 'ZADEL',
     logo: '',
     heroImage: '',
+    heroMobileImage: '',
     heroImages: [],
     heroBrandText: 'ZADEL',
     heroHeadline: 'Quiet luxury.',
@@ -130,6 +133,9 @@ export async function updateSettings(
   if (settingsData.heroImage !== undefined) {
     updates.heroImage = settingsData.heroImage;
   }
+  if (settingsData.heroMobileImage !== undefined) {
+    updates.heroMobileImage = settingsData.heroMobileImage;
+  }
   if (settingsData.heroImages !== undefined) {
     updates.heroImages = settingsData.heroImages;
   }
@@ -171,6 +177,7 @@ export function subscribeToSettings(
           storeName: data.storeName || data.brandName || 'ZADEL',
           logo: data.logo || '',
           heroImage: data.heroImage || '',
+          heroMobileImage: data.heroMobileImage || '',
           heroImages: Array.isArray(data.heroImages) ? data.heroImages : (data.heroImage ? [data.heroImage] : []),
           heroBrandText: data.heroBrandText ?? 'ZADEL',
           heroHeadline: data.heroHeadline ?? 'Quiet luxury.',
@@ -194,6 +201,7 @@ export function subscribeToSettings(
           storeName: 'ZADEL',
           logo: '',
           heroImage: '',
+          heroMobileImage: '',
           heroImages: [],
           heroBrandText: 'ZADEL',
           heroHeadline: 'Quiet luxury.',

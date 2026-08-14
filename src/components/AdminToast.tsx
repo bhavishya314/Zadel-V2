@@ -26,15 +26,15 @@ export default function AdminToast({ toasts, onDismiss }: AdminToastProps) {
             key={toast.id}
             className={`pointer-events-auto flex items-center justify-between gap-3 p-3.5 rounded-xl border shadow-xl backdrop-blur-md transition-all animate-in slide-in-from-bottom-3 duration-200 ${
               isSuccess
-                ? 'bg-emerald-950/90 border-emerald-800/80 text-emerald-200'
+                ? 'bg-emerald-50/95 border-emerald-300 text-emerald-900 dark:bg-emerald-950/90 dark:border-emerald-800/80 dark:text-emerald-200'
                 : isError
-                ? 'bg-red-950/90 border-red-800/80 text-red-200'
-                : 'bg-neutral-900/95 border-neutral-700 text-neutral-200'
+                ? 'bg-red-50/95 border-red-300 text-red-900 dark:bg-red-950/90 dark:border-red-800/80 dark:text-red-200'
+                : 'bg-white/95 border-neutral-300 text-neutral-900 dark:bg-neutral-900/95 dark:border-neutral-700 dark:text-neutral-200'
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              {isSuccess && <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />}
-              {isError && <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />}
+              {isSuccess && <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+              {isError && <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />}
               {!isSuccess && !isError && <Info className="h-4 w-4 text-zadel-gold shrink-0" />}
               <span className="text-xs font-medium leading-tight truncate">
                 {toast.message}
@@ -44,7 +44,7 @@ export default function AdminToast({ toasts, onDismiss }: AdminToastProps) {
             <button
               type="button"
               onClick={() => onDismiss(toast.id)}
-              className="p-1 text-neutral-400 hover:text-foreground rounded-lg shrink-0 transition-colors"
+              className="p-1 text-neutral-500 hover:text-foreground rounded-lg shrink-0 transition-colors cursor-pointer"
             >
               <X className="h-3.5 w-3.5" />
             </button>

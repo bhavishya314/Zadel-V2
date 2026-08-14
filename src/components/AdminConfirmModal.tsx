@@ -38,16 +38,16 @@ export default function AdminConfirmModal({
 
   const variantStyles = {
     danger: {
-      bgIcon: 'bg-red-950/60 border-red-800/60 text-red-400',
-      btn: 'bg-red-950/80 hover:bg-red-900 border-red-800 text-red-200',
+      bgIcon: 'bg-red-500/10 border-red-500/30 text-red-600 dark:bg-red-950/60 dark:border-red-800/60 dark:text-red-400',
+      btn: 'bg-red-600 hover:bg-red-700 text-white dark:bg-red-950/80 dark:hover:bg-red-900 dark:border-red-800 dark:text-red-200 shadow-sm',
     },
     warning: {
-      bgIcon: 'bg-amber-950/60 border-amber-800/60 text-amber-400',
-      btn: 'bg-amber-950/80 hover:bg-amber-900 border-amber-800 text-amber-200',
+      bgIcon: 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:bg-amber-950/60 dark:border-amber-800/60 dark:text-amber-400',
+      btn: 'bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-950/80 dark:hover:bg-amber-900 dark:border-amber-800 dark:text-amber-200 shadow-sm',
     },
     primary: {
-      bgIcon: 'bg-zadel-gold/10 border-zadel-gold/30 text-zadel-gold',
-      btn: 'bg-zadel-gold hover:bg-amber-400 text-black font-semibold',
+      bgIcon: 'bg-zadel-gold/15 border-zadel-gold/30 text-zadel-gold',
+      btn: 'bg-zadel-gold hover:bg-amber-400 text-stone-950 font-semibold shadow-sm',
     },
   }[variant];
 

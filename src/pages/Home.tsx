@@ -15,28 +15,45 @@ import { getOptimizedImageUrl } from '../lib/cloudinary';
 export default function Home() {
   const [products, setProducts] = useState<Product[]>(() => getPublishedProducts());
   const [heroBg, setHeroBg] = useState<string>('/images/placeholder-hero.svg');
+  const [heroMobileBg, setHeroMobileBg] = useState<string>('');
   const [heroBrandText, setHeroBrandText] = useState<string>('ZADEL');
   const [heroHeadline, setHeroHeadline] = useState<string>('Quiet luxury.');
   const [heroHeadlineLine2, setHeroHeadlineLine2] = useState<string>('Endlessly worn.');
   const [heroCtaText, setHeroCtaText] = useState<string>('Shop Collection');
   const [heroCtaLink, setHeroCtaLink] = useState<string>('/shop');
 
-  const optimizedHeroBg = getOptimizedImageUrl(heroBg, { width: 1600 });
+  const optimizedHeroBg = getOptimizedImageUrl(heroBg, { width: 1920 });
+  const optimizedHeroMobileBg = heroMobileBg ? getOptimizedImageUrl(heroMobileBg, { width: 1080 }) : '';
 
-  // Preload hero image and above-the-fold product images immediately & in parallel
+  // Preload hero images and above-the-fold product images immediately & in parallel
   useEffect(() => {
     const head = document.head;
     const preloadLinks: HTMLLinkElement[] = [];
 
-    // Preload Hero image with high priority
+    // Preload Mobile Hero image if configured
+    if (optimizedHeroMobileBg && optimizedHeroMobileBg !== '/images/placeholder-hero.svg') {
+      const mobileLink = document.createElement('link');
+      mobileLink.rel = 'preload';
+      mobileLink.as = 'image';
+      mobileLink.href = optimizedHeroMobileBg;
+      mobileLink.media = '(max-width: 767px)';
+      (mobileLink as any).fetchPriority = 'high';
+      head.appendChild(mobileLink);
+      preloadLinks.push(mobileLink);
+    }
+
+    // Preload Desktop Hero image with high priority
     if (optimizedHeroBg && optimizedHeroBg !== '/images/placeholder-hero.svg') {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'image';
-      link.href = optimizedHeroBg;
-      (link as any).fetchPriority = 'high';
-      head.appendChild(link);
-      preloadLinks.push(link);
+      const desktopLink = document.createElement('link');
+      desktopLink.rel = 'preload';
+      desktopLink.as = 'image';
+      desktopLink.href = optimizedHeroBg;
+      if (optimizedHeroMobileBg) {
+        desktopLink.media = '(min-width: 768px)';
+      }
+      (desktopLink as any).fetchPriority = 'high';
+      head.appendChild(desktopLink);
+      preloadLinks.push(desktopLink);
     }
 
     // Preload top 4 featured product images in parallel
@@ -60,7 +77,7 @@ export default function Home() {
         if (head.contains(l)) head.removeChild(l);
       });
     };
-  }, [optimizedHeroBg, products]);
+  }, [optimizedHeroBg, optimizedHeroMobileBg, products]);
 
   useEffect(() => {
     const unsub = subscribeToSettings((settings) => {
@@ -71,6 +88,8 @@ export default function Home() {
       } else {
         setHeroBg('/images/placeholder-hero.svg');
       }
+
+      setHeroMobileBg(settings.heroMobileImage || '');
 
       if (settings.heroBrandText) setHeroBrandText(settings.heroBrandText);
       if (settings.heroHeadline) setHeroHeadline(settings.heroHeadline);
@@ -142,12 +161,18 @@ export default function Home() {
       {/* Hero */}
       <section className="hero-overlay relative flex h-[52vh] items-center overflow-hidden md:h-[60vh] lg:h-[70vh]">
         <div className="absolute inset-0">
-          <FadeImage
-            src={optimizedHeroBg}
-            alt="Zadel luxury fashion"
-            priority={true}
-            className="h-full w-full object-cover"
-          />
+          <picture className="block h-full w-full">
+            {optimizedHeroMobileBg && (
+              <source media="(max-width: 767px)" srcSet={optimizedHeroMobileBg} />
+            )}
+            <source media="(min-width: 768px)" srcSet={optimizedHeroBg} />
+            <FadeImage
+              src={optimizedHeroBg}
+              alt="Zadel luxury fashion"
+              priority={true}
+              className="h-full w-full object-cover"
+            />
+          </picture>
           <div className="absolute inset-0 bg-gradient-to-t from-zadel-black via-zadel-black/55 to-zadel-black/30" />
           <div className="absolute inset-0 bg-gradient-to-r from-zadel-black/50 to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-zadel-black via-zadel-black/70 to-transparent md:h-32" />

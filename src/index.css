@@ -422,7 +422,7 @@ select {
 }
 
 /* ==========================================
-   LIGHT MODE OPTIMIZATIONS (LIGHT MODE ONLY)
+   LIGHT MODE OPTIMIZATIONS (ZADEL AESTHETIC)
    ========================================== */
 [data-theme="light"] {
   /* Default body & typography */
@@ -434,12 +434,12 @@ select {
   select {
     background-color: #ffffff !important;
     color: #141210 !important;
-    border-color: #dad2c5 !important;
+    border-color: #dcd3c5 !important;
   }
 
   input::placeholder,
   textarea::placeholder {
-    color: #857d72 !important;
+    color: #8c8376 !important;
   }
 
   input:focus,
@@ -447,6 +447,11 @@ select {
   select:focus {
     border-color: #c4a574 !important;
     box-shadow: 0 0 0 3px rgba(196, 165, 116, 0.22) !important;
+  }
+
+  select option {
+    background-color: #ffffff !important;
+    color: #141210 !important;
   }
 
   /* Utility background overrides */
@@ -480,12 +485,23 @@ select {
     background-color: #f3ede2 !important;
   }
 
+  /* Inset / sub-panel backgrounds */
+  .bg-neutral-950\/70,
+  .bg-neutral-950\/60,
+  .bg-neutral-950\/50,
+  .bg-neutral-950\/40,
+  .bg-neutral-950\/30 {
+    background-color: #f8f4ec !important;
+  }
+
   /* Utility border overrides */
   .border-neutral-800,
   .border-neutral-900,
   .border-neutral-700,
   .border-neutral-800\/80,
+  .border-neutral-800\/60,
   .border-neutral-800\/50,
+  .border-neutral-800\/40,
   .border-neutral-800\/30,
   .border-foreground\/5,
   .border-foreground\/8,
@@ -493,7 +509,7 @@ select {
   .border-foreground\/15,
   .divide-neutral-800 > :not([hidden]) ~ :not([hidden]),
   .divide-foreground\/5 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #e0d7c8 !important;
+    border-color: #ded5c6 !important;
   }
 
   /* Text color contrast enhancements */
@@ -503,17 +519,20 @@ select {
     color: #141210 !important;
   }
 
-  .text-neutral-300,
+  .text-neutral-300 {
+    color: #2b2722 !important;
+  }
+
   .text-neutral-400 {
-    color: #3b3732 !important;
+    color: #4a443c !important;
   }
 
   .text-neutral-500 {
-    color: #635c53 !important;
+    color: #6b6357 !important;
   }
 
   .text-neutral-600 {
-    color: #7a7267 !important;
+    color: #857b6d !important;
   }
 
   /* Preserve white text & crisp contrast on light-mode hero overlay banner */
@@ -613,7 +632,7 @@ select {
   .hover\:bg-neutral-700:hover,
   .hover\:bg-foreground\/5:hover,
   .hover\:bg-foreground\/10:hover {
-    background-color: #ebe4d5 !important;
+    background-color: #f3ede2 !important;
   }
 
   .hover\:text-foreground:hover {
@@ -626,6 +645,11 @@ select {
   .bg-black\/60,
   .bg-black\/50 {
     background-color: rgba(20, 18, 16, 0.45) !important;
+  }
+
+  /* Modal Cards in Light Mode */
+  .bg-zadel-elevated {
+    box-shadow: 0 4px 20px -2px rgba(20, 18, 16, 0.04), 0 1px 3px rgba(20, 18, 16, 0.02);
   }
 
   /* Product Card Media Surface */
@@ -641,82 +665,123 @@ select {
 
   /* Tables in Light Mode */
   table th {
-    background-color: #ede6d6 !important;
+    background-color: #f5efe4 !important;
     color: #141210 !important;
-    border-color: #e0d7c8 !important;
+    border-color: #ded5c6 !important;
     font-weight: 600 !important;
   }
 
   table td {
-    border-color: #e5decb !important;
-    color: #141210 !important;
+    border-color: #eae3d8 !important;
+    color: #2b2722 !important;
   }
 
   table tr:hover td {
-    background-color: #f5eee0 !important;
+    background-color: #faf5ed !important;
   }
 
   /* Admin Badges & Status Panels */
+  .bg-red-950\/90,
   .bg-red-950\/80,
   .bg-red-950\/60,
+  .bg-red-950\/50,
   .bg-red-950\/40,
   .bg-red-950\/30,
   .bg-red-900\/60,
   .bg-red-900\/40,
-  .bg-red-500\/10 {
+  .bg-red-500\/10,
+  .bg-red-500\/5 {
     background-color: #fef2f2 !important;
   }
+  .border-red-950\/60,
   .border-red-900\/60,
   .border-red-900\/50,
+  .border-red-900\/40,
   .border-red-900\/30,
-  .border-red-700\/60 {
+  .border-red-800\/80,
+  .border-red-800\/60,
+  .border-red-800,
+  .border-red-700\/60,
+  .border-red-500\/30,
+  .border-red-500\/20 {
     border-color: #fecaca !important;
   }
   .text-red-300,
   .text-red-400 {
     color: #991b1b !important;
   }
+  .text-red-200 {
+    color: #7f1d1d !important;
+  }
 
+  .bg-emerald-950\/90,
   .bg-emerald-950\/80,
   .bg-emerald-950\/60,
+  .bg-emerald-950\/50,
   .bg-emerald-950\/40,
   .bg-emerald-900\/60,
   .bg-emerald-900\/40,
   .bg-emerald-800\/60,
-  .bg-emerald-500\/10 {
+  .bg-emerald-500\/10,
+  .bg-emerald-500\/5 {
     background-color: #ecfdf5 !important;
   }
+  .border-emerald-800\/80,
+  .border-emerald-800\/60,
   .border-emerald-800\/50,
+  .border-emerald-800\/40,
   .border-emerald-700\/60,
   .border-emerald-700\/50,
-  .border-emerald-500\/50 {
+  .border-emerald-500\/50,
+  .border-emerald-500\/30,
+  .border-emerald-500\/20 {
     border-color: #a7f3d0 !important;
   }
   .text-emerald-400,
   .text-emerald-300 {
     color: #046c4e !important;
   }
+  .text-emerald-200 {
+    color: #065f46 !important;
+  }
 
+  .bg-amber-950\/90,
   .bg-amber-950\/80,
   .bg-amber-950\/60,
+  .bg-amber-950\/50,
   .bg-amber-900\/60,
-  .bg-amber-500\/10 {
+  .bg-amber-500\/10,
+  .bg-amber-500\/5 {
     background-color: #fffbeb !important;
   }
+  .border-amber-800\/60,
+  .border-amber-800,
   .border-amber-700\/60,
-  .border-amber-500\/50 {
+  .border-amber-500\/50,
+  .border-amber-500\/30,
+  .border-amber-500\/20 {
     border-color: #fde68a !important;
   }
   .text-amber-400,
   .text-amber-300 {
     color: #92400e !important;
   }
+  .text-amber-200 {
+    color: #78350f !important;
+  }
 
+  .bg-blue-950\/90,
   .bg-blue-950\/80,
   .bg-blue-950\/60,
+  .bg-blue-950\/50,
   .bg-blue-900\/60,
-  .bg-blue-500\/10 {
+  .bg-blue-500\/10,
+  .bg-blue-500\/5 {
     background-color: #eff6ff !important;
+  }
+  .border-blue-500\/30,
+  .border-blue-500\/20 {
+    border-color: #bfdbfe !important;
   }
   .text-blue-400,
   .text-blue-300 {
@@ -728,16 +793,26 @@ select {
     color: #9c7b48 !important;
   }
 
+  .bg-zadel-gold\/10,
+  .bg-zadel-gold\/15 {
+    background-color: #fbf6ee !important;
+  }
+
+  .border-zadel-gold\/30,
+  .border-zadel-gold\/40 {
+    border-color: #dfceb0 !important;
+  }
+
   /* Faint text contrast boost in light mode */
   .text-foreground\/30,
   .text-foreground\/35,
   .text-foreground\/40 {
-    color: #635c53 !important;
+    color: #6b6357 !important;
   }
 
   .text-foreground\/50,
   .text-foreground\/60 {
-    color: #4a453f !important;
+    color: #4a443c !important;
   }
 
   /* Buttons with gold background have crisp dark text */
