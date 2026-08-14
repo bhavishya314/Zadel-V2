@@ -149,10 +149,15 @@ export default function ProductPage() {
   }
 
   const wished = isInWishlist(product.id);
+  const rawImages =
+    product.images && product.images.length > 0 && product.images.some(Boolean)
+      ? product.images.filter(Boolean)
+      : ['/images/placeholder.svg'];
+
   const images =
-    product.images.length > 1
-      ? product.images
-      : [product.images[0], product.images[0], product.images[0]];
+    rawImages.length > 1
+      ? rawImages
+      : [rawImages[0], rawImages[0], rawImages[0]];
 
   const ensureSize = () => {
     if (!size) {
@@ -222,11 +227,14 @@ export default function ProductPage() {
                       : 'border-transparent opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <div className="aspect-[3/4]">
+                  <div className="aspect-[3/4] bg-black">
                     <img
                       src={getOptimizedImageUrl(src, { width: 300 })}
                       alt=""
                       loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/images/placeholder.svg';
+                      }}
                       className="h-full w-full object-cover"
                     />
                   </div>

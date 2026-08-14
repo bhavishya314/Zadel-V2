@@ -91,10 +91,13 @@ export default function SearchModal() {
                     className="flex items-center gap-4 px-5 py-3 transition hover:bg-foreground/5"
                   >
                     <img
-                      src={getOptimizedImageUrl(product.images[0], { width: 150 })}
+                      src={getOptimizedImageUrl(product.images?.[0] || '/images/placeholder.svg', { width: 150 })}
                       alt=""
                       loading="lazy"
-                      className="h-14 w-11 rounded-md object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/images/placeholder.svg';
+                      }}
+                      className="h-14 w-11 rounded-md object-cover bg-black"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-foreground">{product.name}</p>

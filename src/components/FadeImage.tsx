@@ -13,13 +13,19 @@ export default function FadeImage({
   alt,
   className = '',
   onLoad,
+  onError,
   priority = false,
   loading,
   fetchPriority,
   ...rest
 }: Props) {
+  const [imgSrc, setImgSrc] = useState<string>(() => src || '/images/placeholder.svg');
   const [loaded, setLoaded] = useState(() => priority);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    setImgSrc(src || '/images/placeholder.svg');
+  }, [src]);
 
   useEffect(() => {
     if (priority) {
@@ -30,7 +36,7 @@ export default function FadeImage({
     if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
       setLoaded(true);
     }
-  }, [src, priority]);
+  }, [imgSrc, priority]);
 
   const calcLoading = loading ?? (priority ? 'eager' : 'lazy');
   const calcFetchPriority = fetchPriority ?? (priority ? 'high' : 'auto');
@@ -38,7 +44,7 @@ export default function FadeImage({
   return (
     <img
       ref={imgRef}
-      src={src}
+      src={imgSrc}
       alt={alt}
       loading={calcLoading}
       fetchPriority={calcFetchPriority}
@@ -47,6 +53,13 @@ export default function FadeImage({
       onLoad={(e) => {
         setLoaded(true);
         onLoad?.(e);
+      }}
+      onError={(e) => {
+        if (imgSrc !== '/images/placeholder.svg') {
+          setImgSrc('/images/placeholder.svg');
+        }
+        setLoaded(true);
+        onError?.(e);
       }}
       {...rest}
     />

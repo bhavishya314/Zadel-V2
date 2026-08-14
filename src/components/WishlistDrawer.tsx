@@ -61,10 +61,13 @@ export default function WishlistDrawer() {
                         className="h-28 w-22 shrink-0 overflow-hidden rounded-lg bg-zadel-surface"
                       >
                         <img
-                          src={getOptimizedImageUrl(product.images[0], { width: 200 })}
+                          src={getOptimizedImageUrl(product.images?.[0] || '/images/placeholder.svg', { width: 200 })}
                           alt={product.name}
                           loading="lazy"
-                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/images/placeholder.svg';
+                          }}
+                          className="h-full w-full object-cover bg-black"
                         />
                       </Link>
                       <div className="flex min-w-0 flex-1 flex-col">
