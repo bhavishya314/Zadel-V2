@@ -589,6 +589,16 @@ select {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28) !important;
   }
 
+  /* Admin Hero Section Preview — Crisp, natural, no white haze/fog */
+  .admin-hero-preview {
+    background-color: #000000 !important;
+  }
+
+  .admin-hero-preview img {
+    opacity: 1 !important;
+    filter: none !important;
+  }
+
   /* Shop by Category - Clean solid text & dark image gradient overlay */
   .category-card-overlay {
     background: linear-gradient(

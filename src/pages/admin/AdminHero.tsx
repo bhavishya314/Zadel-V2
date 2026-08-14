@@ -452,28 +452,41 @@ export default function AdminHero() {
             </div>
 
             {/* Preview Frame */}
-            <div className="flex justify-center bg-black/5 dark:bg-black/30 rounded-xl p-4 sm:p-6 border border-dashed border-border/70">
+            <div className="flex justify-center bg-neutral-950/40 dark:bg-black/30 rounded-xl p-4 sm:p-6 border border-dashed border-border/70">
               <div
-                className={`relative overflow-hidden rounded-xl border border-border bg-black transition-all duration-300 flex items-center justify-center text-center p-6 ${
+                className={`admin-hero-preview relative overflow-hidden rounded-xl border border-neutral-800 bg-black transition-all duration-300 flex items-center justify-center text-center p-6 ${
                   previewDevice === 'desktop'
                     ? 'w-full aspect-16/9 max-h-[380px]'
                     : 'w-full max-w-[320px] aspect-4/5'
                 }`}
               >
-                {/* Background Image Preview */}
-                <div className="absolute inset-0">
+                {/* Background Image Preview - Clear & Natural without haze or fog */}
+                <div className="absolute inset-0 bg-black">
                   <img
                     src={activePreviewImage}
                     alt="Hero Live Preview"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover select-none"
+                    style={{ filter: 'none', opacity: 1 }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zadel-black via-zadel-black/55 to-zadel-black/30" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-zadel-black/50 to-transparent" />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-zadel-black to-transparent" />
+                  {/* Dedicated crisp dark gradients for contrast & text legibility */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background:
+                        'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.32) 45%, rgba(0,0,0,0.08) 85%, transparent 100%)',
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background:
+                        'linear-gradient(to right, rgba(0,0,0,0.42) 0%, transparent 60%)',
+                    }}
+                  />
                 </div>
 
                 {/* Badge Indicator */}
-                <div className="absolute top-3 left-3 z-20 flex items-center gap-1 bg-black/70 backdrop-blur-xs text-white/90 border border-white/10 px-2 py-0.5 rounded-full text-[10px]">
+                <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 bg-black/80 backdrop-blur-md text-white border border-white/15 px-2.5 py-1 rounded-full text-[10px] font-medium shadow-sm">
                   {previewDevice === 'desktop' ? (
                     <Monitor className="h-3 w-3 text-zadel-gold" />
                   ) : (
@@ -481,29 +494,49 @@ export default function AdminHero() {
                   )}
                   <span>
                     {previewDevice === 'desktop'
-                      ? 'Desktop Banner Preview'
+                      ? 'Desktop Banner Preview (16:9)'
                       : heroMobileImage
-                      ? 'Mobile Banner Preview'
+                      ? 'Mobile Banner Preview (4:5)'
                       : 'Mobile Preview (Fallback to Desktop)'}
                   </span>
                 </div>
 
                 {/* Dynamic text overlay */}
-                <div className="relative z-10 max-w-lg space-y-2.5 px-2">
-                  <p className="font-display text-base sm:text-xl tracking-[0.4em] text-white uppercase">
+                <div className="relative z-10 max-w-lg space-y-2.5 px-2 select-none">
+                  <p
+                    className="font-display text-base sm:text-xl tracking-[0.4em] uppercase font-medium"
+                    style={{ color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.7)' }}
+                  >
                     {heroBrandText || 'ZADEL'}
                   </p>
-                  <h2 className="font-display text-xl sm:text-3xl leading-tight tracking-wide text-white">
+                  <h2
+                    className="font-display text-xl sm:text-3xl leading-tight tracking-wide font-normal"
+                    style={{ color: '#ffffff', textShadow: '0 2px 14px rgba(0,0,0,0.8)' }}
+                  >
                     {heroHeadline || 'Quiet luxury.'}
                     {heroHeadlineLine2 && (
                       <>
                         <br />
-                        <span className="text-white/70">{heroHeadlineLine2}</span>
+                        <span
+                          style={{
+                            color: 'rgba(255, 255, 255, 0.88)',
+                            textShadow: '0 2px 10px rgba(0,0,0,0.7)',
+                          }}
+                        >
+                          {heroHeadlineLine2}
+                        </span>
                       </>
                     )}
                   </h2>
                   <div className="pt-2">
-                    <span className="inline-flex items-center gap-2 rounded-full bg-zadel-gold px-4 py-1.5 text-[9px] sm:text-[10px] font-semibold tracking-[0.2em] text-zadel-ink uppercase">
+                    <span
+                      className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[9px] sm:text-[10px] font-semibold tracking-[0.2em] uppercase shadow-md"
+                      style={{
+                        backgroundColor: '#c4a574',
+                        color: '#0a0a0a',
+                        textShadow: 'none',
+                      }}
+                    >
                       {heroCtaText || 'Shop Collection'}
                       <ArrowRight size={11} />
                     </span>
@@ -544,11 +577,12 @@ export default function AdminHero() {
                 {heroImage ? (
                   <div className="space-y-3">
                     {/* 16:9 Image Preview Frame */}
-                    <div className="relative aspect-16/9 w-full rounded-lg border border-border bg-black/40 overflow-hidden group">
+                    <div className="relative aspect-16/9 w-full rounded-lg border border-border bg-black overflow-hidden group">
                       <img
                         src={heroImage}
                         alt="Desktop Hero Banner"
                         className="h-full w-full object-cover"
+                        style={{ filter: 'none', opacity: 1 }}
                       />
                       <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/80 backdrop-blur-xs text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-800/40">
                         <CheckCircle2 className="h-3 w-3" />
@@ -645,11 +679,12 @@ export default function AdminHero() {
                 {heroMobileImage ? (
                   <div className="space-y-3">
                     {/* 4:5 Image Preview Frame */}
-                    <div className="relative aspect-4/5 max-h-[220px] w-auto mx-auto rounded-lg border border-border bg-black/40 overflow-hidden group">
+                    <div className="relative aspect-4/5 max-h-[220px] w-auto mx-auto rounded-lg border border-border bg-black overflow-hidden group">
                       <img
                         src={heroMobileImage}
                         alt="Mobile Hero Banner"
                         className="h-full w-full object-cover"
+                        style={{ filter: 'none', opacity: 1 }}
                       />
                       <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/80 backdrop-blur-xs text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-800/40">
                         <CheckCircle2 className="h-3 w-3" />
